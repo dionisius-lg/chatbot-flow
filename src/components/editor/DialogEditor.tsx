@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useFlowStore } from '../../store/flowStore';
-import { DIALOG_TYPES } from '../../config/constants';
+import { DIALOG_TYPES } from '../../constants';
 import OptionsEditor from './OptionsEditor';
-import type { BotDialog } from '../../store/flowStore';
+import type { BotDialog } from '../../types';
 
 interface Props {
   dialog: BotDialog;
@@ -10,7 +10,16 @@ interface Props {
 }
 
 export default function DialogEditor({ dialog, setError }: Props) {
-  const { updateDialog, updateMediaDialog, deleteDialog, dialogTypes, flows, saving, activeTemplate, deleteDialogHeader, uploadDialogHeaderFile, setDialogHeaderText } = useFlowStore();
+  const updateDialog = useFlowStore((s) => s.updateDialog);
+  const updateMediaDialog = useFlowStore((s) => s.updateMediaDialog);
+  const deleteDialog = useFlowStore((s) => s.deleteDialog);
+  const dialogTypes = useFlowStore((s) => s.dialogTypes);
+  const flows = useFlowStore((s) => s.flows);
+  const saving = useFlowStore((s) => s.saving);
+  const activeTemplate = useFlowStore((s) => s.activeTemplate);
+  const deleteDialogHeader = useFlowStore((s) => s.deleteDialogHeader);
+  const uploadDialogHeaderFile = useFlowStore((s) => s.uploadDialogHeaderFile);
+  const setDialogHeaderText = useFlowStore((s) => s.setDialogHeaderText);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);

@@ -10,7 +10,7 @@
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { encrypt, decrypt } from '../lib/encryption';
-import { isEmpty } from '../lib/value';
+import { isEmpty, isDomainAddress } from '../lib/value';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const AUTH_KEY = 'bot_auth';          // sessionStorage key for auth data
@@ -91,6 +91,33 @@ function onTokenRefreshed(newToken: string) {
   refreshSubscribers = [];
 }
 
+// Helper to dynamically build API URL based on protocol and input format
+function resolveBaseUrl(serverIp: string): string {
+  if (!serverIp) return '';
+
+  let cleanInput = serverIp.trim();
+
+  // Strip protocol prefix if present
+  if (cleanInput.startsWith('http://')) {
+    cleanInput = cleanInput.substring(7);
+  } else if (cleanInput.startsWith('https://')) {
+    cleanInput = cleanInput.substring(8);
+  }
+
+  // Strip trailing slashes
+  if (cleanInput.endsWith('/')) {
+    cleanInput = cleanInput.slice(0, -1);
+  }
+
+  if (isDomainAddress(cleanInput)) {
+    // Domain -> https://<domain>/api-backend
+    return `https://${cleanInput}/api-backend`;
+  } else {
+    // IP / localhost -> http://<ip> (e.g. http://127.0.0.1:8000)
+    return `http://${cleanInput}`;
+  }
+}
+
 // ─── Request Interceptor ────────────────────────────────────────────────────
 // Sets baseURL from serverIp and attaches Bearer token
 apiClient.interceptors.request.use(async (config) => {
@@ -99,8 +126,7 @@ apiClient.interceptors.request.use(async (config) => {
     window.location.href = '/login';
     return Promise.reject(new Error('No server IP set'));
   }
-  // Base URL always points to port 8000 (backend service)
-  config.baseURL = `http://${serverIp}:8000`;
+  config.baseURL = resolveBaseUrl(serverIp);
   if (!(config.data instanceof FormData)) {
     config.headers['Content-Type'] = 'application/json';
   }
@@ -252,7 +278,7 @@ async function requestApi({ method, endpoint = '', body = {}, config: extraConfi
 
 // Login API (bypasses interceptor since no token exists yet)
 export async function loginApi(serverIp: string, username: string, password: string) {
-  const response = await axios.post(`http://${serverIp}:8000/token`, {
+  const response = await axios.post(`${resolveBaseUrl(serverIp)}/token`, {
     username,
     password,
   }, {

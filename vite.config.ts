@@ -15,7 +15,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   // Load environment variables from .env file
   const env = loadEnv(mode, process.cwd(), '');
+  const basePath = env.VITE_APP_BASE_PATH || '/';
+  const baseDir = basePath.endsWith('/') ? basePath : `${basePath}/`;
+
   return {
+    base: baseDir,
     plugins: [
       react(),
       tailwindcss(),
@@ -47,6 +51,10 @@ export default defineConfig(({ mode }) => {
       })
     ],
     server: {
+      // Port configured via .env: VITE_APP_PORT
+      port: parseInt(env.VITE_APP_PORT || '8082', 10),
+    },
+    preview: {
       // Port configured via .env: VITE_APP_PORT
       port: parseInt(env.VITE_APP_PORT || '8082', 10),
     },

@@ -38,7 +38,16 @@ export default function FlowCanvas() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // ─── Store selectors ─────────────────────────────────────────────────────
-  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeId, onConnect, activeTemplateId, flows, flowTypes, loadWorkspace, loading } = useFlowStore();
+  const storeNodes = useFlowStore((s) => s.nodes);
+  const storeEdges = useFlowStore((s) => s.edges);
+  const selectNode = useFlowStore((s) => s.selectNode);
+  const selectedNodeId = useFlowStore((s) => s.selectedNodeId);
+  const onConnect = useFlowStore((s) => s.onConnect);
+  const activeTemplateId = useFlowStore((s) => s.activeTemplateId);
+  const flows = useFlowStore((s) => s.flows);
+  const flowTypes = useFlowStore((s) => s.flowTypes);
+  const loadWorkspace = useFlowStore((s) => s.loadWorkspace);
+  const loading = useFlowStore((s) => s.loading);
   const user = useAuthStore((s) => s.user);
 
   // ─── React Flow local state ─────────────────────────────────────────────

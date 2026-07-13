@@ -11,7 +11,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { FlowNodeData, BotDialog, BotDialogOption } from '../../store/flowStore';
+import type { FlowNodeData, BotDialog, BotDialogOption } from '../../types';
 
 interface BotFlowNodeProps {
   data: FlowNodeData;

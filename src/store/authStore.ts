@@ -8,13 +8,7 @@
 import { create } from 'zustand';
 import { loginApi, storeAuth, clearAuth, getStoredAuthData } from '../config/api';
 
-// User data model from the API
-interface User {
-  id: number;
-  username: string;
-  fullname: string;
-  role: string;
-}
+import type { User } from '../types';
 
 // Auth state & actions
 interface AuthState {

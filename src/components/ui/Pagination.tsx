@@ -1,5 +1,5 @@
 import { usePaginationRange, getPaginationInfo, PaginationDots } from '../../lib/pagination';
-import type { PaginationInfo } from '../../store/flowStore';
+import type { PaginationInfo } from '../../types';
 
 interface PaginationProps {
   pagination: PaginationInfo;

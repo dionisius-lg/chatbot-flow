@@ -14,7 +14,8 @@
 import { useState, useEffect } from 'react';
 import { useFlowStore } from '../../store/flowStore';
 import DialogEditor from './DialogEditor';
-import type { BotDialog } from '../../store/flowStore';
+import type { BotDialog } from '../../types';
+import { isEmpty } from '../../lib/value';
 
 interface InspectorPanelProps {
   showInspector: boolean;
@@ -23,11 +24,19 @@ interface InspectorPanelProps {
 
 export default function InspectorPanel({ showInspector, onClose }: InspectorPanelProps) {
   // ─── Store selectors ─────────────────────────────────────────────────────
-  const {
-    nodes, selectedNodeId, flowTypes, dialogTypes,
-    updateFlow, deleteFlow, saving, loading,
-    activeTemplateId, createFlow, loadWorkspace, createDialog, createMediaDialog,
-  } = useFlowStore();
+  const nodes = useFlowStore((s) => s.nodes);
+  const selectedNodeId = useFlowStore((s) => s.selectedNodeId);
+  const flowTypes = useFlowStore((s) => s.flowTypes);
+  const dialogTypes = useFlowStore((s) => s.dialogTypes);
+  const updateFlow = useFlowStore((s) => s.updateFlow);
+  const deleteFlow = useFlowStore((s) => s.deleteFlow);
+  const saving = useFlowStore((s) => s.saving);
+  const loading = useFlowStore((s) => s.loading);
+  const activeTemplateId = useFlowStore((s) => s.activeTemplateId);
+  const createFlow = useFlowStore((s) => s.createFlow);
+  const loadWorkspace = useFlowStore((s) => s.loadWorkspace);
+  const createDialog = useFlowStore((s) => s.createDialog);
+  const createMediaDialog = useFlowStore((s) => s.createMediaDialog);
 
   // ─── Derived data ───────────────────────────────────────────────────────
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
@@ -351,7 +360,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
           {dialogs.map((dialog) => (
             <DialogEditor key={dialog.id} dialog={dialog} setError={setError} />
           ))}
-          {dialogs.length === 0 && (
+          {isEmpty(dialogs) && (
             <div className="text-xs text-gray-400 text-center py-4">
               No dialogs yet. Click "+ Add" to create one.
             </div>

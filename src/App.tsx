@@ -27,13 +27,14 @@ const PageLoader = () => (
 // ─── Auth Guard ─────────────────────────────────────────────────────────────
 // Wraps protected components. Redirects to /login if user is not authenticated.
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn } = useAuthStore();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 export default function App() {
-  const { restoreSession, isLoggedIn } = useAuthStore();
+  const restoreSession = useAuthStore((s) => s.restoreSession);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate: restore auth session from storage before rendering
@@ -53,8 +54,11 @@ export default function App() {
     );
   }
 
+  const basePath = import.meta.env.VITE_APP_BASE_PATH || '';
+  const resolvedBasename = basePath === '/' ? '' : basePath;
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={resolvedBasename}>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Login page — redirects to dashboard if already logged in */}

@@ -178,3 +178,26 @@ export const randomString = (length: number = 32, options: {
 
     return result;
 };
+
+/**
+ * Checks if a string represents a domain address (not an IP address and not localhost).
+ *
+ * @param {string} value - The address to check.
+ * @returns {boolean} `true` if the address is a domain name, otherwise `false`.
+ */
+export const isDomainAddress = (value: string): boolean => {
+    if (!value) return false;
+    const cleanInput = value.trim();
+    const hostOnly = cleanInput.split(':')[0];
+    const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostOnly);
+    const isLocalhost = hostOnly.toLowerCase() === 'localhost';
+    return !isIp && !isLocalhost;
+};
+
+export const isValidIpOrDomain = (value: string): boolean => {
+    if (!value) return false;
+    // Regex matches only localhost, IP address, or domain/subdomain with optional port (e.g. localhost:8000, 172.31.0.116, webcc.synergix.co.id)
+    // Strictly forbids protocol (http:// or https://) and slashes/paths (/)
+    const ipOrDomainRegex = /^((localhost)|((\d{1,3}\.){3}\d{1,3})|(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}))(:\d+)?$/;
+    return ipOrDomainRegex.test(value.trim());
+};

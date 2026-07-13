@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useFlowStore } from '../../store/flowStore';
-import type { BotDialogOption } from '../../store/flowStore';
+import type { BotDialogOption } from '../../types';
 
 interface Props {
   dialogId: number;
@@ -16,7 +16,11 @@ interface Props {
 }
 
 export default function OptionsEditor({ dialogId, options, setError }: Props) {
-  const { createOption, updateOption, deleteOption, flows, saving } = useFlowStore();
+  const createOption = useFlowStore((s) => s.createOption);
+  const updateOption = useFlowStore((s) => s.updateOption);
+  const deleteOption = useFlowStore((s) => s.deleteOption);
+  const flows = useFlowStore((s) => s.flows);
+  const saving = useFlowStore((s) => s.saving);
 
   // ─── Local saving state per-action ──────────────────────────────────────
   const [savingAction, setSavingAction] = useState<string | null>(null);
