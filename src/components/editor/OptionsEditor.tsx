@@ -7,15 +7,20 @@
 
 import { useState } from 'react';
 import { useFlowStore } from '../../store/flowStore';
-import type { BotDialogOption } from '../../store/flowStore';
+import type { BotDialogOption } from '../../types';
 
 interface Props {
   dialogId: number;
   options: BotDialogOption[];
+  setError?: (err: string | null) => void;
 }
 
-export default function OptionsEditor({ dialogId, options }: Props) {
-  const { createOption, updateOption, deleteOption, flows, saving } = useFlowStore();
+export default function OptionsEditor({ dialogId, options, setError }: Props) {
+  const createOption = useFlowStore((s) => s.createOption);
+  const updateOption = useFlowStore((s) => s.updateOption);
+  const deleteOption = useFlowStore((s) => s.deleteOption);
+  const flows = useFlowStore((s) => s.flows);
+  const saving = useFlowStore((s) => s.saving);
 
   // ─── Local saving state per-action ──────────────────────────────────────
   const [savingAction, setSavingAction] = useState<string | null>(null);
@@ -31,6 +36,7 @@ export default function OptionsEditor({ dialogId, options }: Props) {
   const handleAdd = async () => {
     if (!newTitle.trim() || isBusy) return;
     setSavingAction('add');
+    setError?.(null);
     try {
       await createOption({
         bot_dialog_id: dialogId,
@@ -43,6 +49,8 @@ export default function OptionsEditor({ dialogId, options }: Props) {
       setNewDesc('');
       setNewNextFlow(0);
       setShowAdd(false);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to add option');
     } finally {
       setSavingAction(null);
     }
@@ -66,6 +74,7 @@ export default function OptionsEditor({ dialogId, options }: Props) {
   const handleEditSave = async () => {
     if (editId === null || isBusy) return;
     setSavingAction('edit');
+    setError?.(null);
     try {
       await updateOption(editId, {
         title: editTitle,
@@ -73,6 +82,8 @@ export default function OptionsEditor({ dialogId, options }: Props) {
         next_flow_id: editNextFlow,
       });
       setEditId(null);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to save option');
     } finally {
       setSavingAction(null);
     }
@@ -82,8 +93,11 @@ export default function OptionsEditor({ dialogId, options }: Props) {
   const handleDeleteOption = async (optionId: number) => {
     if (isBusy) return;
     setSavingAction('delete');
+    setError?.(null);
     try {
       await deleteOption(optionId);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to delete option');
     } finally {
       setSavingAction(null);
     }

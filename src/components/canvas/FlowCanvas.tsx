@@ -38,7 +38,16 @@ export default function FlowCanvas() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // ─── Store selectors ─────────────────────────────────────────────────────
-  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeId, onConnect, activeTemplateId, flows, flowTypes, loadWorkspace, loading } = useFlowStore();
+  const storeNodes = useFlowStore((s) => s.nodes);
+  const storeEdges = useFlowStore((s) => s.edges);
+  const selectNode = useFlowStore((s) => s.selectNode);
+  const selectedNodeId = useFlowStore((s) => s.selectedNodeId);
+  const onConnect = useFlowStore((s) => s.onConnect);
+  const activeTemplateId = useFlowStore((s) => s.activeTemplateId);
+  const flows = useFlowStore((s) => s.flows);
+  const flowTypes = useFlowStore((s) => s.flowTypes);
+  const loadWorkspace = useFlowStore((s) => s.loadWorkspace);
+  const loading = useFlowStore((s) => s.loading);
   const user = useAuthStore((s) => s.user);
 
   // ─── React Flow local state ─────────────────────────────────────────────
@@ -50,12 +59,18 @@ export default function FlowCanvas() {
   const [newFlowName, setNewFlowName] = useState('');
   const [newFlowType, setNewFlowType] = useState(1);
   const [creatingFlow, setCreatingFlow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync nodes & edges from Zustand store to React Flow state
   useEffect(() => {
     setNodes(storeNodes);
     setEdges(storeEdges);
   }, [storeNodes, storeEdges, setNodes, setEdges]);
+
+  // Reset error when popup status changes
+  useEffect(() => {
+    setError(null);
+  }, [showNewFlow]);
 
   // ─── Event Handlers ─────────────────────────────────────────────────────
 
@@ -89,6 +104,7 @@ export default function FlowCanvas() {
   const handleCreateFlow = useCallback(async () => {
     if (!activeTemplateId || !newFlowName.trim() || creatingFlow) return;
     setCreatingFlow(true);
+    setError(null);
     try {
       const store = useFlowStore.getState();
       await store.createFlow({
@@ -102,6 +118,8 @@ export default function FlowCanvas() {
       });
       setNewFlowName('');
       setShowNewFlow(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create flow');
     } finally {
       setCreatingFlow(false);
     }
@@ -164,6 +182,12 @@ export default function FlowCanvas() {
       {showNewFlow && (
         <div className="absolute top-12 sm:top-16 right-2 sm:right-4 z-20 bg-white rounded-xl shadow-xl border border-gray-200 p-3 sm:p-4 w-64 sm:w-72">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">New Flow</h3>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-2 rounded-lg text-xs flex items-center justify-between mb-3">
+              <span className="break-all">{error}</span>
+              <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer ml-1">x</button>
+            </div>
+          )}
           <div className="space-y-3">
             <div>
               <label className="text-xs text-gray-500 block mb-1">Name</label>

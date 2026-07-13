@@ -1,15 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useFlowStore } from '../../store/flowStore';
-import { DIALOG_TYPES } from '../../config/constants';
+import { DIALOG_TYPES } from '../../constants';
 import OptionsEditor from './OptionsEditor';
-import type { BotDialog } from '../../store/flowStore';
+import type { BotDialog } from '../../types';
 
 interface Props {
   dialog: BotDialog;
+  setError?: (err: string | null) => void;
 }
 
-export default function DialogEditor({ dialog }: Props) {
-  const { updateDialog, updateMediaDialog, deleteDialog, dialogTypes, flows, saving, activeTemplate, deleteDialogHeader, uploadDialogHeaderFile, setDialogHeaderText } = useFlowStore();
+export default function DialogEditor({ dialog, setError }: Props) {
+  const updateDialog = useFlowStore((s) => s.updateDialog);
+  const updateMediaDialog = useFlowStore((s) => s.updateMediaDialog);
+  const deleteDialog = useFlowStore((s) => s.deleteDialog);
+  const dialogTypes = useFlowStore((s) => s.dialogTypes);
+  const flows = useFlowStore((s) => s.flows);
+  const saving = useFlowStore((s) => s.saving);
+  const activeTemplate = useFlowStore((s) => s.activeTemplate);
+  const deleteDialogHeader = useFlowStore((s) => s.deleteDialogHeader);
+  const uploadDialogHeaderFile = useFlowStore((s) => s.uploadDialogHeaderFile);
+  const setDialogHeaderText = useFlowStore((s) => s.setDialogHeaderText);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +95,7 @@ export default function DialogEditor({ dialog }: Props) {
   const handleSave = async () => {
     if (savingAction) return;
     setSavingAction('save');
+    setError?.(null);
     try {
       if (editTypeId === 6) {
         await updateMediaDialog(dialog.id, {
@@ -107,6 +118,8 @@ export default function DialogEditor({ dialog }: Props) {
       }
       setDirty(false);
       setEditMediaFile(null);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to save dialog');
     } finally {
       setSavingAction(null);
     }
@@ -116,8 +129,11 @@ export default function DialogEditor({ dialog }: Props) {
     if (savingAction) return;
     if (!window.confirm('Delete this dialog?')) return;
     setSavingAction('delete');
+    setError?.(null);
     try {
       await deleteDialog(dialog.id);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to delete dialog');
     } finally {
       setSavingAction(null);
     }
@@ -127,8 +143,11 @@ export default function DialogEditor({ dialog }: Props) {
     const file = e.target.files?.[0];
     if (!file || savingAction) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await uploadDialogHeaderFile(dialog.id, file);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to upload header file');
     } finally {
       setSavingAction(null);
     }
@@ -138,10 +157,13 @@ export default function DialogEditor({ dialog }: Props) {
   const handleSetHeaderText = async () => {
     if (!newHeaderText.trim() || savingAction) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await setDialogHeaderText(dialog.id, newHeaderText.trim());
       setShowHeaderTextInput(false);
       setNewHeaderText('');
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to set header text');
     } finally {
       setSavingAction(null);
     }
@@ -151,8 +173,11 @@ export default function DialogEditor({ dialog }: Props) {
     if (savingAction) return;
     if (!window.confirm('Delete header?')) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await deleteDialogHeader(dialog.id);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to delete header');
     } finally {
       setSavingAction(null);
     }
@@ -393,7 +418,7 @@ export default function DialogEditor({ dialog }: Props) {
           </div>
 
           {hasOptions && (
-            <OptionsEditor dialogId={dialog.id} options={dialog.options || []} />
+            <OptionsEditor dialogId={dialog.id} options={dialog.options || []} setError={setError} />
           )}
         </div>
       )}

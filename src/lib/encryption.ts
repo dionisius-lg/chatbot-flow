@@ -37,6 +37,11 @@ async function getCryptoKey(): Promise<CryptoKey> {
  */
 export async function encrypt(value: string = ''): Promise<string | null> {
     try {
+        if (typeof window === 'undefined') return null;
+        if (!window.crypto || !window.crypto.subtle) {
+            console.warn('Web Crypto API not available (possibly insecure context). Falling back to Base64.');
+            return 'fallback:' + btoa(encodeURIComponent(value));
+        }
         const key = await getCryptoKey();
         // Generate a new random IV for each encryption
         const iv = window.crypto.getRandomValues(new Uint8Array(16));
@@ -69,6 +74,15 @@ export async function encrypt(value: string = ''): Promise<string | null> {
  */
 export async function decrypt(data: string): Promise<string | null> {
     try {
+        if (!data || typeof window === 'undefined') return null;
+        if (data.startsWith('fallback:')) {
+            const base64Str = data.substring(9);
+            return decodeURIComponent(atob(base64Str));
+        }
+        if (!window.crypto || !window.crypto.subtle) {
+            console.error('Web Crypto API not available but data requires decryption.');
+            return null;
+        }
         const key = await getCryptoKey();
         // Convert the hex string back to a Uint8Array
         const fullData = new Uint8Array(data.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));

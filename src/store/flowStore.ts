@@ -7,91 +7,16 @@
 
 import { create } from 'zustand';
 import apiClient from '../config/api';
-
-// ─── Data Models ─────────────────────────────────────────────────────────────
-
-export interface BotTemplate {
-  id: number;
-  name: string;
-  media_id: string;
-  is_active: number;
-  created: string;
-  updated: string | null;
-}
-
-export interface PaginationInfo {
-  total: number;
-  per_page: number;
-  current_page: number;
-  last_page: number;
-  paging: {
-    current: number;
-    next: number;
-    previous: number;
-    first: number;
-    last: number;
-  };
-}
-
-export interface BotFlowType {
-  id: number;
-  name: string;
-  info: string;
-}
-
-export interface BotDialogType {
-  id: number;
-  name: string;
-  info: string;
-}
-
-export interface BotDialogOption {
-  id: number;
-  bot_dialog_id: number;
-  next_flow_id: number;
-  title: string;
-  description: string;
-  is_active: number;
-}
-
-export interface BotDialog {
-  id: number;
-  sequence: number;
-  bot_flow_id: number;
-  bot_dialog_type_id: number;
-  next_flow_id: number;
-  header: string | null;
-  body: string | null;
-  footer: string | null;
-  media: string | object | null;
-  shortcode: string | null;
-  option_title: string | null;
-  is_record_usage: number;
-  is_active: number;
-  options?: BotDialogOption[];
-}
-
-export interface BotFlow {
-  id: number;
-  bot_template_id: number;
-  bot_flow_type_id: number;
-  name: string | null;
-  next_flow_id: number;
-  timeout_duration: number;
-  is_initial: number;
-  is_active: number;
-  bot_dialogs?: BotDialog[];
-}
-
-// Data payload attached to each React Flow node
-export interface FlowNodeData {
-  flow: BotFlow;
-  flowTypeName: string;
-  flowTypeColor: string;
-  dialogCount: number;
-  dialogs: BotDialog[];
-  options: BotDialogOption[];
-}
+import type {
+  BotTemplate,
+  PaginationInfo,
+  BotFlowType,
+  BotDialogType,
+  BotDialogOption,
+  BotDialog,
+  BotFlow,
+  FlowNodeData
+} from '../types';
 
 // ─── Store State Interface ───────────────────────────────────────────────────
 
@@ -396,7 +321,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   updateFlow: async (flowId, data) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_flows/${flowId}`, data);
+      const res = await apiClient.put(`/bot_flows/${flowId}`, data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to update flow');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -407,7 +335,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   createFlow: async (data) => {
     set({ saving: true });
     try {
-      await apiClient.post('/bot_flows', data);
+      const res = await apiClient.post('/bot_flows', data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to create flow');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -418,7 +349,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   deleteFlow: async (flowId) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_flows/${flowId}`, { is_active: 0 });
+      const res = await apiClient.put(`/bot_flows/${flowId}`, { is_active: 0 });
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to delete flow');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -431,7 +365,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   createDialog: async (data) => {
     set({ saving: true });
     try {
-      await apiClient.post('/bot_dialogs', data);
+      const res = await apiClient.post('/bot_dialogs', data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to create dialog');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -442,7 +379,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   updateDialog: async (dialogId, data) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_dialogs/${dialogId}`, data);
+      const res = await apiClient.put(`/bot_dialogs/${dialogId}`, data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to update dialog');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -453,7 +393,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   deleteDialog: async (dialogId) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_dialogs/${dialogId}`, { is_active: 0 });
+      const res = await apiClient.put(`/bot_dialogs/${dialogId}`, { is_active: 0 });
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to delete dialog');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -464,7 +407,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   deleteDialogHeader: async (dialogId) => {
     set({ saving: true });
     try {
-      await apiClient.delete(`/bot_dialogs/${dialogId}/header`);
+      const res = await apiClient.delete(`/bot_dialogs/${dialogId}/header`);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to delete dialog header');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -477,7 +423,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await apiClient.put(`/bot_dialogs/${dialogId}/header/file`, formData);
+      const res = await apiClient.put(`/bot_dialogs/${dialogId}/header/file`, formData);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to upload dialog header file');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -488,7 +437,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   setDialogHeaderText: async (dialogId, text) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_dialogs/${dialogId}/header/text`, { text });
+      const res = await apiClient.put(`/bot_dialogs/${dialogId}/header/text`, { text });
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to set dialog header text');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -505,7 +457,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
       if (data.bot_dialog_type_id !== undefined) formData.append('bot_dialog_type_id', String(data.bot_dialog_type_id));
       if (data.sequence !== undefined) formData.append('sequence', String(data.sequence));
       if (data.next_flow_id !== undefined) formData.append('next_flow_id', String(data.next_flow_id));
-      await apiClient.post('/bot_dialogs/media', formData);
+      const res = await apiClient.post('/bot_dialogs/media', formData);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to create media dialog');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -523,7 +478,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
       if (data.sequence !== undefined) formData.append('sequence', String(data.sequence));
       if (data.next_flow_id !== undefined) formData.append('next_flow_id', String(data.next_flow_id));
       if (data.is_active !== undefined) formData.append('is_active', String(data.is_active));
-      await apiClient.put(`/bot_dialogs/${dialogId}/media`, formData);
+      const res = await apiClient.put(`/bot_dialogs/${dialogId}/media`, formData);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to update media dialog');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -536,7 +494,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   createOption: async (data) => {
     set({ saving: true });
     try {
-      await apiClient.post('/bot_dialog_options', data);
+      const res = await apiClient.post('/bot_dialog_options', data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to create option');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -547,7 +508,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   updateOption: async (optionId, data) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_dialog_options/${optionId}`, data);
+      const res = await apiClient.put(`/bot_dialog_options/${optionId}`, data);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to update option');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {
@@ -558,7 +522,10 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
   deleteOption: async (optionId) => {
     set({ saving: true });
     try {
-      await apiClient.put(`/bot_dialog_options/${optionId}`, { is_active: 0 });
+      const res = await apiClient.put(`/bot_dialog_options/${optionId}`, { is_active: 0 });
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Failed to delete option');
+      }
       const { activeTemplateId } = get();
       if (activeTemplateId) await get().loadWorkspace(activeTemplateId);
     } finally {

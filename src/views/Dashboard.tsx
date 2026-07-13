@@ -14,8 +14,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFlowStore } from '../store/flowStore';
-import type { BotTemplate } from '../store/flowStore';
+import type { BotTemplate } from '../types';
 import Pagination from '../components/ui/Pagination';
+import { isEmpty, dateParse } from '../lib/value';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const MEDIA_LABELS: Record<string, string> = {
@@ -30,8 +31,16 @@ function getMediaLabel(mediaId: string): string {
 export default function Dashboard() {
   // ─── Store selectors ─────────────────────────────────────────────────────
   const navigate = useNavigate();
-  const { user, serverIp, logout } = useAuthStore();
-  const { templates, pagination, loadTemplates, createTemplate, updateTemplate, loading } = useFlowStore();
+  const user = useAuthStore((s) => s.user);
+  const serverIp = useAuthStore((s) => s.serverIp);
+  const logout = useAuthStore((s) => s.logout);
+
+  const templates = useFlowStore((s) => s.templates);
+  const pagination = useFlowStore((s) => s.pagination);
+  const loadTemplates = useFlowStore((s) => s.loadTemplates);
+  const createTemplate = useFlowStore((s) => s.createTemplate);
+  const updateTemplate = useFlowStore((s) => s.updateTemplate);
+  const loading = useFlowStore((s) => s.loading);
 
   // ─── Local state ─────────────────────────────────────────────────────────
   const [showCreate, setShowCreate] = useState(false);
@@ -209,7 +218,7 @@ export default function Dashboard() {
             </svg>
             <span>Loading...</span>
           </div>
-        ) : templates.length === 0 ? (
+        ) : isEmpty(templates) ? (
           // Empty state
           <div className="text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-200">
             No templates yet. Create one to get started.
@@ -233,7 +242,12 @@ export default function Dashboard() {
                         {tpl.is_active ? 'Active' : 'Inactive'}
                       </span>
                       <span>{getMediaLabel(tpl.media_id)}</span>
-                      <span className="hidden sm:inline">Created: {tpl.created ? new Date(tpl.created).toLocaleDateString('id-ID') : '-'}</span>
+                      <span className="hidden sm:inline">
+                        Created: {tpl.created ? (() => {
+                          const p = dateParse(tpl.created);
+                          return p.date ? `${p.date}/${p.month}/${p.year}` : '-';
+                        })() : '-'}
+                      </span>
                     </div>
                   </div>
                 </div>
