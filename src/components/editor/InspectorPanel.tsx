@@ -48,6 +48,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
   const [savingFlow, setSavingFlow] = useState(false);
   const [addingDialog, setAddingDialog] = useState(false);
   const [newMediaFile, setNewMediaFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync form state when flow changes (e.g., after reload or node switch)
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
       setEditActive(flow.is_active);
       setEditNextFlowId(flow.next_flow_id);
       setDirty(false);
+      setError(null);
     }
   }, [flow]);
 
@@ -68,6 +70,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
   const handleSave = async () => {
     if (!flow || savingFlow) return;
     setSavingFlow(true);
+    setError(null);
     try {
       await updateFlow(flow.id, {
         name: editName,
@@ -78,6 +81,8 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
         next_flow_id: editNextFlowId,
       });
       setDirty(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save flow properties');
     } finally {
       setSavingFlow(false);
     }
@@ -86,13 +91,19 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
   // Soft-delete flow (set is_active = 0)
   const handleDelete = async () => {
     if (!flow || !window.confirm(`Delete flow "${flow.name || `#${flow.id}`}"?`)) return;
-    await deleteFlow(flow.id);
+    setError(null);
+    try {
+      await deleteFlow(flow.id);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete flow');
+    }
   };
 
   // Add a new dialog to the selected flow
   const handleAddDialog = async () => {
     if (!flow || addingDialog) return;
     setAddingDialog(true);
+    setError(null);
     try {
       if (newDialogType === 6) {
         await createMediaDialog({
@@ -113,6 +124,8 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
       setShowNewDialog(false);
       setNewDialogBody('');
       setNewMediaFile(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to add dialog');
     } finally {
       setAddingDialog(false);
     }
@@ -154,6 +167,14 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
         </span>
         <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-lg cursor-pointer">x</button>
       </div>
+
+      {/* ─── Error Banner ────────────────────────────────────────────────── */}
+      {error && (
+        <div className="mx-4 mt-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer ml-2">x</button>
+        </div>
+      )}
 
       {/* ─── Flow Properties Section ─────────────────────────────────────── */}
       <div className="p-4 border-b border-gray-200">
@@ -328,7 +349,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
         {/* ─── Dialog List ────────────────────────────────────────────────── */}
         <div className="space-y-2">
           {dialogs.map((dialog) => (
-            <DialogEditor key={dialog.id} dialog={dialog} />
+            <DialogEditor key={dialog.id} dialog={dialog} setError={setError} />
           ))}
           {dialogs.length === 0 && (
             <div className="text-xs text-gray-400 text-center py-4">

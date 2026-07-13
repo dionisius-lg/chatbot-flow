@@ -6,9 +6,10 @@ import type { BotDialog } from '../../store/flowStore';
 
 interface Props {
   dialog: BotDialog;
+  setError?: (err: string | null) => void;
 }
 
-export default function DialogEditor({ dialog }: Props) {
+export default function DialogEditor({ dialog, setError }: Props) {
   const { updateDialog, updateMediaDialog, deleteDialog, dialogTypes, flows, saving, activeTemplate, deleteDialogHeader, uploadDialogHeaderFile, setDialogHeaderText } = useFlowStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +86,7 @@ export default function DialogEditor({ dialog }: Props) {
   const handleSave = async () => {
     if (savingAction) return;
     setSavingAction('save');
+    setError?.(null);
     try {
       if (editTypeId === 6) {
         await updateMediaDialog(dialog.id, {
@@ -107,6 +109,8 @@ export default function DialogEditor({ dialog }: Props) {
       }
       setDirty(false);
       setEditMediaFile(null);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to save dialog');
     } finally {
       setSavingAction(null);
     }
@@ -116,8 +120,11 @@ export default function DialogEditor({ dialog }: Props) {
     if (savingAction) return;
     if (!window.confirm('Delete this dialog?')) return;
     setSavingAction('delete');
+    setError?.(null);
     try {
       await deleteDialog(dialog.id);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to delete dialog');
     } finally {
       setSavingAction(null);
     }
@@ -127,8 +134,11 @@ export default function DialogEditor({ dialog }: Props) {
     const file = e.target.files?.[0];
     if (!file || savingAction) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await uploadDialogHeaderFile(dialog.id, file);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to upload header file');
     } finally {
       setSavingAction(null);
     }
@@ -138,10 +148,13 @@ export default function DialogEditor({ dialog }: Props) {
   const handleSetHeaderText = async () => {
     if (!newHeaderText.trim() || savingAction) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await setDialogHeaderText(dialog.id, newHeaderText.trim());
       setShowHeaderTextInput(false);
       setNewHeaderText('');
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to set header text');
     } finally {
       setSavingAction(null);
     }
@@ -151,8 +164,11 @@ export default function DialogEditor({ dialog }: Props) {
     if (savingAction) return;
     if (!window.confirm('Delete header?')) return;
     setSavingAction('header');
+    setError?.(null);
     try {
       await deleteDialogHeader(dialog.id);
+    } catch (err: any) {
+      setError?.(err.message || 'Failed to delete header');
     } finally {
       setSavingAction(null);
     }
@@ -393,7 +409,7 @@ export default function DialogEditor({ dialog }: Props) {
           </div>
 
           {hasOptions && (
-            <OptionsEditor dialogId={dialog.id} options={dialog.options || []} />
+            <OptionsEditor dialogId={dialog.id} options={dialog.options || []} setError={setError} />
           )}
         </div>
       )}
