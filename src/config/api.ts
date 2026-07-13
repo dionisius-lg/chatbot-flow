@@ -114,7 +114,7 @@ function resolveBaseUrl(serverIp: string): string {
     return `https://${cleanInput}/api-backend`;
   } else {
     // IP / localhost -> http://<ip> (e.g. http://127.0.0.1:8000)
-    return `http://${cleanInput}`;
+    return `http://${cleanInput}:8000`;
   }
 }
 
