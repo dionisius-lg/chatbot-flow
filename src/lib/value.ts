@@ -14,7 +14,9 @@
  * isEmpty('hello'); // false
  */
 export const isEmpty = (value: any): boolean => {
-    if (value instanceof FormData || value instanceof Blob || value instanceof File) return false;
+    if (value instanceof FormData || value instanceof Blob || value instanceof File) {
+        return false;
+    }
     return (
         value === undefined ||
         value === null ||
@@ -58,32 +60,38 @@ export const dateParse = (value: string) => {
         year: '',
         month: '',
         date: '',
-        hour: '', 
+        hour: '',
         minute: '',
         second: '',
         dayname: '',
-        monthname: ''
+        monthname: '',
     };
 
     if (isValidDate(value)) {
         const dateValue = new Date(value);
-        const [month, date, year] = dateValue.toLocaleDateString('default', {
-            timeZone: 'Asia/Jakarta',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).split('/');
-        const [hour, minute, second] = dateValue.toLocaleTimeString('default', {
-            timeZone: 'Asia/Jakarta',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        }).split(':');
-        const [monthname, dayname] = dateValue.toLocaleDateString('default', {
-            weekday: 'short',
-            month: 'short'
-        }).split(' ');
+        const [month, date, year] = dateValue
+            .toLocaleDateString('default', {
+                timeZone: 'Asia/Jakarta',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            })
+            .split('/');
+        const [hour, minute, second] = dateValue
+            .toLocaleTimeString('default', {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+            })
+            .split(':');
+        const [monthname, dayname] = dateValue
+            .toLocaleDateString('default', {
+                weekday: 'short',
+                month: 'short',
+            })
+            .split(' ');
 
         result = { year, month, date, hour, minute, second, monthname, dayname };
     }
@@ -106,13 +114,14 @@ export const formatCurrency = (value: string | number): string => {
     let result: number = 0;
 
     switch (true) {
-    case typeof value === 'string':
-        const text = value.replace(/[^0-9]/g, '');
-        result = Number(text);
-        break;
-    case typeof value === 'number' && value >= 0:
-        result = value;
-        break;
+        case typeof value === 'string': {
+            const text = value.replace(/[^0-9]/g, '');
+            result = Number(text);
+            break;
+        }
+        case typeof value === 'number' && value >= 0:
+            result = value;
+            break;
     }
 
     return result.toLocaleString('id-ID');
@@ -130,7 +139,7 @@ export const formatCurrency = (value: string | number): string => {
  */
 export const sleep = (seconds: number) => {
     const miliseconds: number = (seconds || 1) * 1000;
-    return new Promise(resolve => setTimeout(resolve, miliseconds));
+    return new Promise((resolve) => setTimeout(resolve, miliseconds));
 };
 
 /**
@@ -147,12 +156,15 @@ export const sleep = (seconds: number) => {
  * @example
  * randomString(8, { capital: true, numeric: true }); // e.g., "aB3dE6gH"
  */
-export const randomString = (length: number = 32, options: {
-    capital?: boolean;
-    numeric?: boolean;
-    symbol?: boolean;
-} = { capital: false, numeric: false, symbol: false }) => {
-    let string = 'abcdefghijklmnopqrstuvwxyz'
+export const randomString = (
+    length: number = 32,
+    options: {
+        capital?: boolean;
+        numeric?: boolean;
+        symbol?: boolean;
+    } = { capital: false, numeric: false, symbol: false },
+) => {
+    let string = 'abcdefghijklmnopqrstuvwxyz';
     let result = '';
 
     if (length <= 0 || !Number.isInteger(length)) {
@@ -172,7 +184,7 @@ export const randomString = (length: number = 32, options: {
     }
 
     for (let i = 0; i < length; i++) {
-        let random = Math.floor(Math.random() * string.length);
+        const random = Math.floor(Math.random() * string.length);
         result += string.charAt(random);
     }
 
@@ -180,24 +192,59 @@ export const randomString = (length: number = 32, options: {
 };
 
 /**
- * Checks if a string represents a domain address (not an IP address and not localhost).
+ * Validates whether the given string represents a valid IPv4 address.
  *
- * @param {string} value - The address to check.
- * @returns {boolean} `true` if the address is a domain name, otherwise `false`.
+ * @param {string} value - The IP string to validate.
+ * @returns {boolean} `true` if the IP is valid, otherwise `false`.
+ *
+ * @example
+ * isValidIp('172.31.0.116'); // true
+ * isValidIp('256.0.0.1');    // false
  */
-export const isDomainAddress = (value: string): boolean => {
-    if (!value) return false;
-    const cleanInput = value.trim();
-    const hostOnly = cleanInput.split(':')[0];
-    const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostOnly);
-    const isLocalhost = hostOnly.toLowerCase() === 'localhost';
-    return !isIp && !isLocalhost;
+export const isValidIp = (value: string): boolean => {
+    if (!value) {
+        return false;
+    }
+
+    const ipRegex = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+
+    return ipRegex.test(value.trim());
 };
 
-export const isValidIpOrDomain = (value: string): boolean => {
-    if (!value) return false;
-    // Regex matches only localhost, IP address, or domain/subdomain with optional port (e.g. localhost:8000, 172.31.0.116, webcc.synergix.co.id)
-    // Strictly forbids protocol (http:// or https://) and slashes/paths (/)
-    const ipOrDomainRegex = /^((localhost)|((\d{1,3}\.){3}\d{1,3})|(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}))(:\d+)?$/;
-    return ipOrDomainRegex.test(value.trim());
+/**
+ * Validates whether the given string represents a valid domain name format.
+ *
+ * @param {string} value - The domain string to validate.
+ * @returns {boolean} `true` if the domain format is valid, otherwise `false`.
+ *
+ * @example
+ * isValidDomain('webcc.synergix.co.id'); // true
+ * isValidDomain('invalid_domain');      // false
+ */
+export const isValidDomain = (value: string): boolean => {
+    if (!value) {
+        return false;
+    }
+
+    const domainRegex = /^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[A-Za-z]{2,63}$/;
+
+    return domainRegex.test(value.trim());
+};
+
+/**
+ * Validates whether the given string represents a valid host address (localhost, valid IP, or valid domain).
+ *
+ * @param {string} value - The host string to validate.
+ * @returns {boolean} `true` if the host is valid, otherwise `false`.
+ *
+ * @example
+ * isValidHost('localhost');            // true
+ * isValidHost('172.31.0.116');         // true
+ * isValidHost('webcc.synergix.co.id'); // true
+ * isValidHost('invalid/host');         // false
+ */
+export const isValidHost = (value: string): boolean => {
+    const host = value.trim();
+
+    return host === 'localhost' || isValidIp(host) || isValidDomain(host);
 };

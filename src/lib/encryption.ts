@@ -17,13 +17,13 @@ async function getCryptoKey(): Promise<CryptoKey> {
     if ((window as any).__cryptoKeyCache) {
         return (window as any).__cryptoKeyCache;
     }
-  
+
     const key = await window.crypto.subtle.importKey(
         'raw',
         keyData,
         { name: 'AES-CBC', length: 256 },
         true, // extractable
-        ['encrypt', 'decrypt']
+        ['encrypt', 'decrypt'],
     );
 
     (window as any).__cryptoKeyCache = key;
@@ -37,21 +37,19 @@ async function getCryptoKey(): Promise<CryptoKey> {
  */
 export async function encrypt(value: string = ''): Promise<string | null> {
     try {
-        if (typeof window === 'undefined') return null;
+        if (typeof window === 'undefined') {
+            return null;
+        }
         if (!window.crypto || !window.crypto.subtle) {
             console.warn('Web Crypto API not available (possibly insecure context). Falling back to Base64.');
-            return 'fallback:' + btoa(encodeURIComponent(value));
+            return `fallback:${btoa(encodeURIComponent(value))}`;
         }
         const key = await getCryptoKey();
         // Generate a new random IV for each encryption
         const iv = window.crypto.getRandomValues(new Uint8Array(16));
         const encodedValue = new TextEncoder().encode(value);
-        
-        const encryptedData = await window.crypto.subtle.encrypt(
-            { name: 'AES-CBC', iv: iv },
-            key,
-            encodedValue
-        );
+
+        const encryptedData = await window.crypto.subtle.encrypt({ name: 'AES-CBC', iv }, key, encodedValue);
 
         // Combine the IV and the encrypted data into a single array for storage
         const fullData = new Uint8Array(iv.length + encryptedData.byteLength);
@@ -59,8 +57,9 @@ export async function encrypt(value: string = ''): Promise<string | null> {
         fullData.set(new Uint8Array(encryptedData), iv.length);
 
         // Convert the combined Uint8Array to a hex string
-        return Array.from(fullData).map(b => b.toString(16).padStart(2, '0')).join('');
-
+        return Array.from(fullData)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
     } catch (err) {
         console.error('Encryption error:', err);
         return null;
@@ -74,7 +73,9 @@ export async function encrypt(value: string = ''): Promise<string | null> {
  */
 export async function decrypt(data: string): Promise<string | null> {
     try {
-        if (!data || typeof window === 'undefined') return null;
+        if (!data || typeof window === 'undefined') {
+            return null;
+        }
         if (data.startsWith('fallback:')) {
             const base64Str = data.substring(9);
             return decodeURIComponent(atob(base64Str));
@@ -85,7 +86,7 @@ export async function decrypt(data: string): Promise<string | null> {
         }
         const key = await getCryptoKey();
         // Convert the hex string back to a Uint8Array
-        const fullData = new Uint8Array(data.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+        const fullData = new Uint8Array(data.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
 
         // Extract the IV (first 16 bytes) and the encrypted data
         const iv = fullData.slice(0, 16);
@@ -94,15 +95,14 @@ export async function decrypt(data: string): Promise<string | null> {
         const decryptedData = await window.crypto.subtle.decrypt(
             {
                 name: 'AES-CBC',
-                iv: iv,
+                iv,
             },
             key,
-            encryptedData
+            encryptedData,
         );
 
         // Convert the decrypted Uint8Array back to a string
         return new TextDecoder().decode(decryptedData);
-
     } catch (err) {
         console.error('Decryption error:', err);
         return null;
