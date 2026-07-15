@@ -5,7 +5,7 @@
 // Responsive: on mobile (< md) renders as a fixed full-screen overlay;
 // on desktop (md+) renders as a fixed-width sidebar.
 // Features:
-// - Flow Properties: name, type, timeout, next_flow, is_initial, is_active
+// - Node Properties: name, type, timeout, next_flow, is_initial, is_active
 // - Dirty state detection: save button appears only when changes are detected
 // - Dialog list with inline DialogEditor per item
 // - Add Dialog form with type and body fields
@@ -91,7 +91,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             });
             setDirty(false);
         } catch (err: any) {
-            setError(err.message || 'Failed to save flow properties');
+            setError(err.message || 'Failed to save node properties');
         } finally {
             setSavingFlow(false);
         }
@@ -99,14 +99,14 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
 
     // Soft-delete flow (set is_active = 0)
     const handleDelete = async () => {
-        if (!flow || !window.confirm(`Delete flow "${flow.name || `#${flow.id}`}"?`)) {
+        if (!flow || !window.confirm(`Delete node "${flow.name || `#${flow.id}`}"?`)) {
             return;
         }
         setError(null);
         try {
             await deleteFlow(flow.id);
         } catch (err: any) {
-            setError(err.message || 'Failed to delete flow');
+            setError(err.message || 'Failed to delete node');
         }
     };
 
@@ -169,7 +169,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                         x
                     </button>
                 </div>
-                <div className='p-4 text-center text-gray-400 text-sm mt-20'>Select a flow node to edit properties</div>
+                <div className='p-4 text-center text-gray-400 text-sm mt-20'>Select a node to edit properties</div>
             </div>
         );
     }
@@ -178,7 +178,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
         <div className={containerClasses}>
             {/* ─── Mobile Header: title + close button ─────────────────────────── */}
             <div className='md:hidden flex items-center justify-between p-3 border-b border-gray-200'>
-                <span className='text-sm font-semibold text-gray-700'>{flow.name || `Flow #${flow.id}`}</span>
+                <span className='text-sm font-semibold text-gray-700'>{flow.name || `Node #${flow.id}`}</span>
                 <button onClick={onClose} className='text-gray-500 hover:text-gray-700 text-lg cursor-pointer'>
                     x
                 </button>
@@ -201,7 +201,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             <div className='p-4 border-b border-gray-200'>
                 {/* Header: title + save button (dirty only) + delete */}
                 <div className='flex items-center justify-between mb-4'>
-                    <h2 className='text-sm font-semibold text-gray-700'>Flow Properties</h2>
+                    <h2 className='text-sm font-semibold text-gray-700'>Node Properties</h2>
                     <div className='flex gap-1'>
                         {dirty && (
                             <button
@@ -247,7 +247,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                 <div className='space-y-3'>
                     {/* Flow ID (read-only) */}
                     <div>
-                        <label className='text-xs text-gray-500 block mb-1'>Flow ID</label>
+                        <label className='text-xs text-gray-500 block mb-1'>Node ID</label>
                         <input
                             type='text'
                             value={`#${flow.id}`}
@@ -267,13 +267,13 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                 setDirty(true);
                             }}
                             className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none'
-                            placeholder='Flow name'
+                            placeholder='Node name'
                         />
                     </div>
 
                     {/* Flow type */}
                     <div>
-                        <label className='text-xs text-gray-500 block mb-1'>Flow Type</label>
+                        <label className='text-xs text-gray-500 block mb-1'>Node Type</label>
                         <select
                             value={editTypeId}
                             onChange={(e) => {
@@ -306,7 +306,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                             />
                         </div>
                         <div>
-                            <label className='text-xs text-gray-500 block mb-1'>Next Flow</label>
+                            <label className='text-xs text-gray-500 block mb-1'>Next Node</label>
                             <select
                                 value={editNextFlowId}
                                 onChange={(e) => {
@@ -321,7 +321,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                     .flows.filter((f) => f.id !== flow.id)
                                     .map((f) => (
                                         <option key={f.id} value={f.id}>
-                                            {f.name || `Flow #${f.id}`}
+                                            {f.name || `Node #${f.id}`}
                                         </option>
                                     ))}
                             </select>

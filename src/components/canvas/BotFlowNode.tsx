@@ -68,7 +68,7 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
             <div className='px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2'>
                 <div className='flex items-center gap-2 min-w-0'>
                     <span className='text-xs font-mono text-gray-400'>#{flow.id}</span>
-                    <span className='text-sm font-semibold truncate'>{flow.name || `Flow #${flow.id}`}</span>
+                    <span className='text-sm font-semibold truncate'>{flow.name || `Node #${flow.id}`}</span>
                 </div>
                 <div className='flex items-center gap-1 shrink-0'>
                     {isInitial && (

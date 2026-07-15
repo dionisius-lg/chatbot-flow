@@ -74,7 +74,7 @@ describe('flowStore', () => {
             await useFlowStore.getState().loadTemplates(1);
 
             const state = useFlowStore.getState();
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=1');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?&is_active=1&limit=5&page=1');
             expect(state.templates).toHaveLength(2);
             expect(state.pagination.total).toBe(25);
             expect(state.pagination.current_page).toBe(1);
@@ -107,7 +107,7 @@ describe('flowStore', () => {
             const res = await useFlowStore.getState().createTemplate({ name: 'New Template', media_id: '4' });
             expect(apiClient.post).toHaveBeenCalledWith('/bot_templates', { name: 'New Template', media_id: '4' });
             expect(res).toEqual(mockCreateRes);
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=1');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?&is_active=1&limit=5&page=1');
         });
 
         it('throws an error during create if API returns success: false', async () => {
@@ -141,7 +141,7 @@ describe('flowStore', () => {
 
             await useFlowStore.getState().updateTemplate(1, { name: 'Updated Template' });
             expect(apiClient.put).toHaveBeenCalledWith('/bot_templates/1', { name: 'Updated Template' });
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=3');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?&is_active=1&limit=5&page=3');
         });
 
         it('deletes a template soft (puts is_active = 0) and reloads templates', async () => {
@@ -162,7 +162,7 @@ describe('flowStore', () => {
                 if (url === `/bot_templates/${templateId}`) {
                     return Promise.resolve({ id: templateId, name: 'Tpl 10', media_id: '4' });
                 }
-                if (url === `/bot_flows?bot_template_id=${templateId}`) {
+                if (url === `/bot_flows?bot_template_id=${templateId}&is_active=1&limit=100`) {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -190,7 +190,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_flow_types?is_active=1') {
+                if (url === '/bot_flow_types?is_active=1&limit=100') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -200,7 +200,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialog_types?is_active=1') {
+                if (url === '/bot_dialog_types?is_active=1&limit=100') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -210,7 +210,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialogs?bot_flow_id=101') {
+                if (url === '/bot_dialogs?bot_flow_id=101&is_active=1&limit=100') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -226,10 +226,10 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialogs?bot_flow_id=102') {
+                if (url === '/bot_dialogs?bot_flow_id=102&is_active=1&limit=100') {
                     return Promise.resolve({ data: { data: [] } });
                 }
-                if (url === '/bot_dialog_options?bot_dialog_id=501') {
+                if (url === '/bot_dialog_options?bot_dialog_id=501&is_active=1&limit=100') {
                     return Promise.resolve({
                         data: {
                             data: [

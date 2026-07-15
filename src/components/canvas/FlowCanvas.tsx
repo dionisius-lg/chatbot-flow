@@ -7,7 +7,7 @@
 // - Custom node type: botFlowNode
 // - Click node → selects it for the inspector panel
 // - Drag to connect nodes → auto-persists via API
-// - "Add Flow" floating button with inline popup form
+// - "Add Node" floating button with inline popup form
 // - Loading overlay with spinner while workspace is loading
 // ============================================================================
 
@@ -50,7 +50,7 @@ export default function FlowCanvas() {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-    // ─── Local UI state (Add Flow popup) ────────────────────────────────────
+    // ─── Local UI state (Add Node popup) ────────────────────────────────────
     const [showNewFlow, setShowNewFlow] = useState(false);
     const [newFlowName, setNewFlowName] = useState('');
     const [newFlowType, setNewFlowType] = useState(1);
@@ -114,7 +114,7 @@ export default function FlowCanvas() {
             setNewFlowName('');
             setShowNewFlow(false);
         } catch (err: any) {
-            setError(err.message || 'Failed to create flow');
+            setError(err.message || 'Failed to create node');
         } finally {
             setCreatingFlow(false);
         }
@@ -170,25 +170,25 @@ export default function FlowCanvas() {
                                 d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
                             />
                         </svg>
-                        <span className='text-sm text-gray-500 font-medium'>Loading flows...</span>
+                        <span className='text-sm text-gray-500 font-medium'>Loading nodes...</span>
                     </div>
                 </div>
             )}
 
-            {/* ─── Add Flow Button (floating, top-right) ────────────────────────── */}
+            {/* ─── Add Node Button (floating, top-right) ────────────────────────── */}
             <div className='absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex gap-2'>
                 <button
                     onClick={() => setShowNewFlow(!showNewFlow)}
                     className='bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md text-xs sm:text-sm font-medium transition-colors cursor-pointer'
                 >
-                    + Add Flow
+                    + Add Node
                 </button>
             </div>
 
-            {/* ─── Add Flow Popup (responsive) ────────────────────────────────────── */}
+            {/* ─── Add Node Popup (responsive) ────────────────────────────────────── */}
             {showNewFlow && (
                 <div className='absolute top-12 sm:top-16 right-2 sm:right-4 z-20 bg-white rounded-xl shadow-xl border border-gray-200 p-3 sm:p-4 w-64 sm:w-72'>
-                    <h3 className='text-sm font-semibold text-gray-700 mb-3'>New Flow</h3>
+                    <h3 className='text-sm font-semibold text-gray-700 mb-3'>New Node</h3>
                     {error && (
                         <div className='bg-red-50 border border-red-200 text-red-700 p-2 rounded-lg text-xs flex items-center justify-between mb-3'>
                             <span className='break-all'>{error}</span>
@@ -208,7 +208,7 @@ export default function FlowCanvas() {
                                 value={newFlowName}
                                 onChange={(e) => setNewFlowName(e.target.value)}
                                 className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none'
-                                placeholder='Flow name'
+                                placeholder='Node name'
                             />
                         </div>
                         <div>

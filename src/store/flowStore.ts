@@ -149,7 +149,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     loadTemplates: async (page = 1) => {
         const perPage = 5;
         try {
-            const res = await apiClient.get(`/bot_templates?limit=${perPage}&page=${page}`);
+            const res = await apiClient.get(`/bot_templates?&is_active=1&limit=${perPage}&page=${page}`);
             const data = res.data || [];
             const paging = res.paging ? { ...res.paging, previous: res.paging.previuos } : {};
             const totalData = res.total_data || 0;
@@ -220,9 +220,9 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             }
             // Parallel: fetch flows, flow types, and dialog types
             const [flowsRes, flowTypesRes, dialogTypesRes] = await Promise.all([
-                apiClient.get(`/bot_flows?bot_template_id=${templateId}`),
-                apiClient.get('/bot_flow_types?is_active=1'),
-                apiClient.get('/bot_dialog_types?is_active=1'),
+                apiClient.get(`/bot_flows?bot_template_id=${templateId}&is_active=1&limit=100`),
+                apiClient.get('/bot_flow_types?is_active=1&limit=100'),
+                apiClient.get('/bot_dialog_types?is_active=1&limit=100'),
             ]);
 
             const flows: BotFlow[] = flowsRes.data?.data || flowsRes.data || [];
@@ -231,7 +231,9 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             const flowsWithDialogs = await Promise.all(
                 flows.map(async (flow: BotFlow) => {
                     try {
-                        const dialogsRes = await apiClient.get(`/bot_dialogs?bot_flow_id=${flow.id}`);
+                        const dialogsRes = await apiClient.get(
+                            `/bot_dialogs?bot_flow_id=${flow.id}&is_active=1&limit=100`,
+                        );
                         const dialogs: BotDialog[] = dialogsRes.data?.data || dialogsRes.data || [];
 
                         // For each dialog with options (type 2, 3, 4), fetch options
@@ -240,7 +242,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
                                 if ([2, 3, 4].includes(dialog.bot_dialog_type_id)) {
                                     try {
                                         const optsRes = await apiClient.get(
-                                            `/bot_dialog_options?bot_dialog_id=${dialog.id}`,
+                                            `/bot_dialog_options?bot_dialog_id=${dialog.id}&is_active=1&limit=100`,
                                         );
                                         dialog.options = optsRes.data?.data || optsRes.data || [];
                                     } catch {

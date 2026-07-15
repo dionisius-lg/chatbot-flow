@@ -149,10 +149,10 @@ export default function OptionsEditor({ dialogId, options, setError }: Props) {
                         onChange={(e) => setNewNextFlow(Number(e.target.value))}
                         className='w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 outline-none'
                     >
-                        <option value={0}>No next flow</option>
+                        <option value={0}>No next node</option>
                         {flows.map((f) => (
                             <option key={f.id} value={f.id}>
-                                {f.name || `Flow #${f.id}`}
+                                {f.name || `Node #${f.id}`}
                             </option>
                         ))}
                     </select>
@@ -226,7 +226,7 @@ export default function OptionsEditor({ dialogId, options, setError }: Props) {
                                     <option value={0}>None</option>
                                     {flows.map((f) => (
                                         <option key={f.id} value={f.id}>
-                                            {f.name || `Flow #${f.id}`}
+                                            {f.name || `Node #${f.id}`}
                                         </option>
                                     ))}
                                 </select>
@@ -279,7 +279,7 @@ export default function OptionsEditor({ dialogId, options, setError }: Props) {
                                     )}
                                     {opt.next_flow_id > 0 && (
                                         <div className='text-[10px] text-blue-500'>
-                                            {'\u2192'} Flow #{opt.next_flow_id}
+                                            {'\u2192'} Node #{opt.next_flow_id}
                                         </div>
                                     )}
                                 </div>
