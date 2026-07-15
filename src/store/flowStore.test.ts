@@ -158,7 +158,7 @@ describe('flowStore', () => {
             const templateId = 10;
 
             // 1. Mock Templates lookup fallback
-            vi.mocked(apiClient.get).mockImplementation((url: string) => {
+            vi.mocked(apiClient.get).mockImplementation((url?: string) => {
                 if (url === `/bot_templates/${templateId}`) {
                     return Promise.resolve({ id: templateId, name: 'Tpl 10', media_id: '4' });
                 }
