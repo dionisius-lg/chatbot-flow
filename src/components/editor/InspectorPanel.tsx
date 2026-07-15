@@ -46,7 +46,6 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
     const [editTypeId, setEditTypeId] = useState(1);
     const [editTimeout, setEditTimeout] = useState(0);
     const [editInitial, setEditInitial] = useState(0);
-    const [editActive, setEditActive] = useState(1);
     const [editNextFlowId, setEditNextFlowId] = useState(0);
     const [dirty, setDirty] = useState(false);
     const [showNewDialog, setShowNewDialog] = useState(false);
@@ -64,7 +63,6 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             setEditTypeId(flow.bot_flow_type_id);
             setEditTimeout(flow.timeout_duration);
             setEditInitial(flow.is_initial);
-            setEditActive(flow.is_active);
             setEditNextFlowId(flow.next_flow_id);
             setDirty(false);
             setError(null);
@@ -86,7 +84,6 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                 bot_flow_type_id: editTypeId,
                 timeout_duration: editTimeout,
                 is_initial: editInitial,
-                is_active: editActive,
                 next_flow_id: editNextFlowId,
             });
             setDirty(false);
@@ -271,27 +268,25 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                         />
                     </div>
 
-                    {/* Flow type */}
-                    <div>
-                        <label className='text-xs text-gray-500 block mb-1'>Node Type</label>
-                        <select
-                            value={editTypeId}
-                            onChange={(e) => {
-                                setEditTypeId(Number(e.target.value));
-                                setDirty(true);
-                            }}
-                            className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
-                        >
-                            {flowTypes.map((ft) => (
-                                <option key={ft.id} value={ft.id}>
-                                    {ft.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Timeout & Next Flow (2-column grid) */}
+                    {/* Node Type & Timeout (2-column grid) */}
                     <div className='grid grid-cols-2 gap-2'>
+                        <div>
+                            <label className='text-xs text-gray-500 block mb-1'>Node Type</label>
+                            <select
+                                value={editTypeId}
+                                onChange={(e) => {
+                                    setEditTypeId(Number(e.target.value));
+                                    setDirty(true);
+                                }}
+                                className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
+                            >
+                                {flowTypes.map((ft) => (
+                                    <option key={ft.id} value={ft.id}>
+                                        {ft.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div>
                             <label className='text-xs text-gray-500 block mb-1'>Timeout (s)</label>
                             <input
@@ -305,27 +300,29 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                 min={0}
                             />
                         </div>
-                        <div>
-                            <label className='text-xs text-gray-500 block mb-1'>Next Node</label>
-                            <select
-                                value={editNextFlowId}
-                                onChange={(e) => {
-                                    setEditNextFlowId(Number(e.target.value));
-                                    setDirty(true);
-                                }}
-                                className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
-                            >
-                                <option value={0}>None</option>
-                                {useFlowStore
-                                    .getState()
-                                    .flows.filter((f) => f.id !== flow.id)
-                                    .map((f) => (
-                                        <option key={f.id} value={f.id}>
-                                            {f.name || `Node #${f.id}`}
-                                        </option>
-                                    ))}
-                            </select>
-                        </div>
+                    </div>
+
+                    {/* Next flow */}
+                    <div>
+                        <label className='text-xs text-gray-500 block mb-1'>Next Node</label>
+                        <select
+                            value={editNextFlowId}
+                            onChange={(e) => {
+                                setEditNextFlowId(Number(e.target.value));
+                                setDirty(true);
+                            }}
+                            className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
+                        >
+                            <option value={0}>None</option>
+                            {useFlowStore
+                                .getState()
+                                .flows.filter((f) => f.id !== flow.id)
+                                .map((f) => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.name || `Node #${f.id}`}
+                                    </option>
+                                ))}
+                        </select>
                     </div>
 
                     {/* Checkboxes: is_initial & is_active */}
@@ -341,18 +338,6 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                 className='rounded border-gray-300 text-indigo-600 focus:ring-indigo-500'
                             />
                             Initial
-                        </label>
-                        <label className='flex items-center gap-2 text-sm text-gray-600 cursor-pointer'>
-                            <input
-                                type='checkbox'
-                                checked={editActive === 1}
-                                onChange={(e) => {
-                                    setEditActive(e.target.checked ? 1 : 0);
-                                    setDirty(true);
-                                }}
-                                className='rounded border-gray-300 text-indigo-600 focus:ring-indigo-500'
-                            />
-                            Active
                         </label>
                     </div>
                 </div>

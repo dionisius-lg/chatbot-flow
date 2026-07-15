@@ -149,7 +149,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     loadTemplates: async (page = 1) => {
         const perPage = 5;
         try {
-            const res = await apiClient.get(`/bot_templates?&is_active=1&limit=${perPage}&page=${page}`);
+            const res = await apiClient.get(`/bot_templates?limit=${perPage}&page=${page}`);
             const data = res.data || [];
             const paging = res.paging ? { ...res.paging, previous: res.paging.previuos } : {};
             const totalData = res.total_data || 0;
