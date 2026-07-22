@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { useAuthStore } from './authStore';
-import { loginApi, storeAuth, clearAuth, getStoredAuthData } from '../config/api';
+import { loginApi, storeAuth, clearAuth, getStoredAuthData } from '../../../config/api';
 
 // Mock the API client helper calls
-vi.mock('../config/api', () => ({
+vi.mock('../../../config/api', () => ({
     loginApi: vi.fn(),
     storeAuth: vi.fn(),
     clearAuth: vi.fn(),

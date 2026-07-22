@@ -1,15 +1,15 @@
-// ============================================================================
-// Auth Store (Zustand)
-// ============================================================================
-// Manages authentication state: login, logout, session restoration.
-// Tokens and auth data are stored in sessionStorage (encrypted via api.ts).
-// ============================================================================
+/**
+ * authStore — Zustand State Management for Authentication
+ *
+ * Responsible for managing the user's login state (isLoggedIn, loading, error).
+ * Stores token and user profile data globally.
+ */
 
 import { create } from 'zustand';
 
-import { loginApi, storeAuth, clearAuth, getStoredAuthData } from '../config/api';
+import { authService } from '../services/authService';
 
-import type { AuthState, User } from '../types';
+import type { AuthState, User } from '../../../types';
 
 // Extract token from various API response formats
 function extractToken(data: any): string | null {
@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // ─── Restore session from sessionStorage (called on App mount) ─────────
     restoreSession: async () => {
-        const { token, refreshToken, serverIp, user } = await getStoredAuthData();
+        const { token, refreshToken, serverIp, user } = await authService.restoreSession();
         if (token && serverIp) {
             set({ token, refreshToken, serverIp, user, isLoggedIn: true });
         }
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     login: async (serverIp: string, username: string, password: string) => {
         set({ loading: true, error: null });
         try {
-            const data = await loginApi(serverIp, username, password);
+            const data = await authService.login(serverIp, username, password);
 
             const token = extractToken(data);
             const refreshToken = extractRefreshToken(data);
@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             }
 
             // Save to sessionStorage (encrypted) and Zustand state
-            storeAuth(token, refreshToken || '', serverIp, user);
+            await authService.storeSession(token, refreshToken || '', serverIp, user);
             set({
                 token,
                 refreshToken,
@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // ─── Logout: clear all auth data ───────────────────────────────────────
     logout: () => {
-        clearAuth();
+        authService.logout();
         set({
             token: null,
             refreshToken: null,

@@ -1,19 +1,18 @@
-// ============================================================================
-// Builder — Main Workspace Page
-// ============================================================================
-// Main layout for the flow editor:
-// - Header: back button, template name (with loading spinner), refresh button, user info
-// - FlowCanvas (left): React Flow canvas with nodes/edges
-// - InspectorPanel (right): flow & dialog property editor
-// Responsive: on mobile (smaller than md) the inspector panel becomes a toggleable overlay.
-// ============================================================================
+/**
+ * Builder (Bot Flow Editor)
+ *
+ * The main component (Page) for editing bot flows.
+ * This component connects the FlowCanvas (visual editor) on the left
+ * and the InspectorPanel (form editor) on the right.
+ * Responsive: on mobile (smaller than md) the inspector panel becomes a toggleable overlay.
+ */
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import FlowCanvas from '../components/canvas/FlowCanvas';
-import InspectorPanel from '../components/editor/InspectorPanel';
-import { useAuthStore } from '../store/authStore';
+import FlowCanvas from './FlowCanvas';
+import InspectorPanel from './InspectorPanel';
+import { useAuthStore } from '../../auth/store/authStore';
 import { useFlowStore } from '../store/flowStore';
 
 export default function Builder() {

@@ -19,8 +19,7 @@ describe('encryption helpers', () => {
                 writable: true,
             });
         } else {
-            // @ts-expect-error: delete read-only property window.crypto in test environment
-            delete window.crypto;
+            delete (window as any).crypto;
         }
         vi.restoreAllMocks();
     });
@@ -36,17 +35,21 @@ describe('encryption helpers', () => {
         });
 
         it('encrypts string with fallback prefix', async () => {
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
             const raw = 'secret-message';
             const encrypted = await encrypt(raw);
             expect(encrypted).toBeDefined();
             expect(encrypted?.startsWith('fallback:')).toBe(true);
+            consoleSpy.mockRestore();
         });
 
         it('decrypts fallback encrypted string correctly', async () => {
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
             const raw = 'my-secret-key-123';
             const encrypted = await encrypt(raw);
             const decrypted = await decrypt(encrypted!);
             expect(decrypted).toBe(raw);
+            consoleSpy.mockRestore();
         });
 
         it('returns empty string fallback decryption for empty input', async () => {
@@ -113,8 +116,7 @@ describe('encryption helpers', () => {
             // Temporarily mock window being undefined in encrypt
             const originalWindow = globalThis.window;
             try {
-                // @ts-expect-error: delete global window object to test server environment
-                delete globalThis.window;
+                delete (globalThis as any).window;
                 const result = await encrypt('hello');
                 expect(result).toBeNull();
             } finally {

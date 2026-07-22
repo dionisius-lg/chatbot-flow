@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
 
-import App from './App.tsx';
+import App from './app/App.tsx';
 
 // Register PWA service worker automatically
 registerSW({ immediate: true });

@@ -7,9 +7,9 @@
 
 import { useState } from 'react';
 
-import { useFlowStore } from '../../store/flowStore';
+import { useFlowStore } from '../store/flowStore';
 
-import type { BotDialogOption } from '../../types';
+import type { BotDialogOption } from '../../../types';
 
 interface Props {
     dialogId: number;

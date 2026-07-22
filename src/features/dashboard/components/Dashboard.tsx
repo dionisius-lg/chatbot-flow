@@ -1,24 +1,19 @@
-// ============================================================================
-// Dashboard — Template List Page
-// ============================================================================
-// Displays all bot templates with full CRUD capabilities:
-// - Create: + New Template button opens inline form
-// - Read: template cards with active/inactive status
-// - Update: Edit button opens inline form, Toggle Active/Deactivate
-// - Open: navigates to the flow builder for that template
-// - Error handling: API errors shown in a dismissible red banner
-// - Loading: animated spinner while fetching template list
-// ============================================================================
-
+/**
+ * Dashboard (Template List Page)
+ *
+ * The landing page after login. Displays a list of bot templates.
+ * Includes full CRUD (Create, Read, Update) capabilities for bot templates.
+ * Click a template to navigate to the Builder page.
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import Pagination from '../components/ui/Pagination';
-import { isEmpty, dateParse } from '../lib/value';
-import { useAuthStore } from '../store/authStore';
-import { useFlowStore } from '../store/flowStore';
+import { isEmpty, dateParse } from '../../../lib/value';
+import Pagination from '../../../shared/components/ui/Pagination';
+import { useAuthStore } from '../../auth/store/authStore';
+import { useFlowStore } from '../../flow/store/flowStore';
 
-import type { BotTemplate } from '../types';
+import type { BotTemplate } from '../../../types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const MEDIA_LABELS: Record<string, string> = {

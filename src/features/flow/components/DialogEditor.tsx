@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 
 import OptionsEditor from './OptionsEditor';
-import { useFlowStore } from '../../store/flowStore';
+import { useFlowStore } from '../store/flowStore';
 
-import type { BotDialog } from '../../types';
+import type { BotDialog } from '../../../types';
 
 interface Props {
     dialog: BotDialog;

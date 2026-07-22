@@ -1,9 +1,8 @@
 // ============================================================================
 // Vite Configuration
 // ============================================================================
-// - React plugin (JSX transform, HMR)
-// - Tailwind CSS v4 plugin
-// - Dev server port from .env (VITE_APP_PORT), default 5173
+// This file is the central configuration for the build process and dev server.
+// Vite is used as it provides significantly faster build times compared to Webpack.
 // ============================================================================
 
 import tailwindcss from '@tailwindcss/vite';
@@ -11,9 +10,10 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Use function config to access the current mode (development/production)
+// We use the defineConfig(({ mode }) => {...}) syntax
+// to dynamically load environment variables (.env) based on the current mode (development/production).
 export default defineConfig(({ mode }) => {
-    // Load environment variables from .env file
+    // loadEnv extracts variables from the .env file that are prefixed with VITE_
     const env = loadEnv(mode, process.cwd(), '');
     const basePath = env.VITE_APP_BASE_PATH || '/';
     const baseDir = basePath.endsWith('/') ? basePath : `${basePath}/`;
@@ -21,8 +21,11 @@ export default defineConfig(({ mode }) => {
     return {
         base: baseDir,
         plugins: [
+            // Plugin to support React JSX syntax and Fast Refresh
             react(),
+            // Plugin to compile Tailwind CSS v4
             tailwindcss(),
+            // Progressive Web App (PWA) plugin to allow the app to be installed like a native app
             VitePWA({
                 registerType: 'autoUpdate',
                 includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
@@ -61,13 +64,15 @@ export default defineConfig(({ mode }) => {
         build: {
             rollupOptions: {
                 output: {
+                    // manualChunks splits the final build into separate files (chunks)
+                    // to avoid having one giant file. This improves the initial load time of the application.
                     manualChunks(id) {
                         if (id.includes('node_modules')) {
-                            // Put React Flow/xyflow in a separate chunk
+                            // React Flow graph library is very large, so we separate it into 'vendor-flow'
                             if (id.includes('@xyflow') || id.includes('reactflow')) {
                                 return 'vendor-flow';
                             }
-                            // Other node_modules in main vendor chunk
+                            // Other third-party libraries go into the main 'vendor' chunk
                             return 'vendor';
                         }
                     },

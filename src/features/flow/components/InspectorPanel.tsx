@@ -14,10 +14,10 @@
 import { useState, useEffect } from 'react';
 
 import DialogEditor from './DialogEditor';
-import { isEmpty } from '../../lib/value';
-import { useFlowStore } from '../../store/flowStore';
+import { isEmpty } from '../../../lib/value';
+import { useFlowStore } from '../store/flowStore';
 
-import type { BotDialog } from '../../types';
+import type { BotDialog } from '../../../types';
 
 interface InspectorPanelProps {
     showInspector: boolean;

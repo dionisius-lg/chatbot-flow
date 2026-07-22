@@ -1,6 +1,6 @@
-import { usePaginationRange, getPaginationInfo, PaginationDots } from '../../lib/pagination';
+import { usePaginationRange, getPaginationInfo, PaginationDots } from '../../../lib/pagination';
 
-import type { PaginationInfo } from '../../types';
+import type { PaginationInfo } from '../../../types';
 
 interface PaginationProps {
     pagination: PaginationInfo;

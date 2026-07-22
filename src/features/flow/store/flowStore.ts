@@ -1,13 +1,16 @@
-// ============================================================================
-// Flow Store (Zustand) — Central state for templates, flows, dialogs, options
-// ============================================================================
-// Manages all CRUD operations for bot templates, flows, dialogs, and options.
-// Provides React Flow node/edge construction from hierarchical API data.
-// ============================================================================
+/**
+ * flowStore — Zustand State Management
+ *
+ * This file is the "brain" for all flow data and bot templates.
+ * We use Zustand (instead of Redux) because it requires much less boilerplate
+ * and doesn't need a Provider wrapper in React.
+ * State here is global and can be accessed from any component using:
+ * const { templates, loadTemplates } = useFlowStore();
+ */
 
 import { create } from 'zustand';
 
-import apiClient from '../config/api';
+import { flowService } from '../services/flowService';
 
 import type {
     BotFlowType,
@@ -17,7 +20,7 @@ import type {
     BotFlow,
     FlowNodeData,
     FlowStoreState,
-} from '../types';
+} from '../../../types';
 
 // ─── Helper: Build React Flow nodes & edges from hierarchical data ───────────
 
@@ -149,7 +152,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     loadTemplates: async (page = 1) => {
         const perPage = 5;
         try {
-            const res = await apiClient.get(`/bot_templates?limit=${perPage}&page=${page}`);
+            const res = await flowService.getTemplates(page, perPage);
             const data = res.data || [];
             const paging = res.paging ? { ...res.paging, previous: res.paging.previuos } : {};
             const totalData = res.total_data || 0;
@@ -169,7 +172,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
 
     // Create new template — throws error if API returns success: false
     createTemplate: async (data) => {
-        const res = await apiClient.post('/bot_templates', data);
+        const res = await flowService.createTemplate(data);
         if (res && res.success === false) {
             throw new Error(res.message || 'Failed to create template');
         }
@@ -180,7 +183,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
 
     // Update existing template — throws error if API returns success: false
     updateTemplate: async (id, data) => {
-        const res = await apiClient.put(`/bot_templates/${id}`, data);
+        const res = await flowService.updateTemplate(id, data);
         if (res && res.success === false) {
             throw new Error(res.message || 'Failed to update template');
         }
@@ -192,7 +195,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
 
     // Soft-delete template (set is_active = 0)
     deleteTemplate: async (id) => {
-        const res = await apiClient.put(`/bot_templates/${id}`, { is_active: 0 });
+        const res = await flowService.updateTemplate(id, { is_active: 0 });
         if (res && res.success === false) {
             throw new Error(res.message || 'Failed to delete template');
         }
@@ -212,7 +215,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             if (found) {
                 set({ activeTemplate: found });
             } else {
-                const tplRes = await apiClient.get(`/bot_templates/${templateId}`);
+                const tplRes = await flowService.getTemplate(templateId);
                 const tpl = tplRes.data || tplRes;
                 if (tpl && tpl.id) {
                     set({ activeTemplate: tpl });
@@ -220,9 +223,9 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             }
             // Parallel: fetch flows, flow types, and dialog types
             const [flowsRes, flowTypesRes, dialogTypesRes] = await Promise.all([
-                apiClient.get(`/bot_flows?bot_template_id=${templateId}&is_active=1&limit=100`),
-                apiClient.get('/bot_flow_types?is_active=1&limit=100'),
-                apiClient.get('/bot_dialog_types?is_active=1&limit=100'),
+                flowService.getFlows(templateId),
+                flowService.getFlowTypes(),
+                flowService.getDialogTypes(),
             ]);
 
             const flows: BotFlow[] = flowsRes.data?.data || flowsRes.data || [];
@@ -231,9 +234,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             const flowsWithDialogs = await Promise.all(
                 flows.map(async (flow: BotFlow) => {
                     try {
-                        const dialogsRes = await apiClient.get(
-                            `/bot_dialogs?bot_flow_id=${flow.id}&is_active=1&limit=100`,
-                        );
+                        const dialogsRes = await flowService.getDialogs(flow.id);
                         const dialogs: BotDialog[] = dialogsRes.data?.data || dialogsRes.data || [];
 
                         // For each dialog with options (type 2, 3, 4), fetch options
@@ -241,9 +242,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
                             dialogs.map(async (dialog: BotDialog) => {
                                 if ([2, 3, 4].includes(dialog.bot_dialog_type_id)) {
                                     try {
-                                        const optsRes = await apiClient.get(
-                                            `/bot_dialog_options?bot_dialog_id=${dialog.id}&is_active=1&limit=100`,
-                                        );
+                                        const optsRes = await flowService.getOptions(dialog.id);
                                         dialog.options = optsRes.data?.data || optsRes.data || [];
                                     } catch {
                                         dialog.options = [];
@@ -289,7 +288,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     updateFlow: async (flowId, data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_flows/${flowId}`, data);
+            const res = await flowService.updateFlow(flowId, data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to update flow');
             }
@@ -305,7 +304,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     createFlow: async (data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.post('/bot_flows', data);
+            const res = await flowService.createFlow(data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to create flow');
             }
@@ -321,7 +320,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     deleteFlow: async (flowId) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_flows/${flowId}`, { is_active: 0 });
+            const res = await flowService.updateFlow(flowId, { is_active: 0 });
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to delete flow');
             }
@@ -339,7 +338,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     createDialog: async (data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.post('/bot_dialogs', data);
+            const res = await flowService.createDialog(data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to create dialog');
             }
@@ -355,7 +354,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     updateDialog: async (dialogId, data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_dialogs/${dialogId}`, data);
+            const res = await flowService.updateDialog(dialogId, data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to update dialog');
             }
@@ -371,7 +370,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     deleteDialog: async (dialogId) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_dialogs/${dialogId}`, { is_active: 0 });
+            const res = await flowService.updateDialog(dialogId, { is_active: 0 });
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to delete dialog');
             }
@@ -387,7 +386,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     deleteDialogHeader: async (dialogId) => {
         set({ saving: true });
         try {
-            const res = await apiClient.delete(`/bot_dialogs/${dialogId}/header`);
+            const res = await flowService.deleteDialogHeader(dialogId);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to delete dialog header');
             }
@@ -405,7 +404,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
         try {
             const formData = new FormData();
             formData.append('file', file);
-            const res = await apiClient.put(`/bot_dialogs/${dialogId}/header/file`, formData);
+            const res = await flowService.uploadDialogHeaderFile(dialogId, formData);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to upload dialog header file');
             }
@@ -421,7 +420,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     setDialogHeaderText: async (dialogId, text) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_dialogs/${dialogId}/header/text`, { text });
+            const res = await flowService.setDialogHeaderText(dialogId, text);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to set dialog header text');
             }
@@ -451,7 +450,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             if (data.next_flow_id !== undefined) {
                 formData.append('next_flow_id', String(data.next_flow_id));
             }
-            const res = await apiClient.post('/bot_dialogs/media', formData);
+            const res = await flowService.createMediaDialog(formData);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to create media dialog');
             }
@@ -486,7 +485,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             if (data.is_active !== undefined) {
                 formData.append('is_active', String(data.is_active));
             }
-            const res = await apiClient.put(`/bot_dialogs/${dialogId}/media`, formData);
+            const res = await flowService.updateMediaDialog(dialogId, formData);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to update media dialog');
             }
@@ -504,7 +503,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     createOption: async (data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.post('/bot_dialog_options', data);
+            const res = await flowService.createOption(data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to create option');
             }
@@ -520,7 +519,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     updateOption: async (optionId, data) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_dialog_options/${optionId}`, data);
+            const res = await flowService.updateOption(optionId, data);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to update option');
             }
@@ -536,7 +535,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     deleteOption: async (optionId) => {
         set({ saving: true });
         try {
-            const res = await apiClient.put(`/bot_dialog_options/${optionId}`, { is_active: 0 });
+            const res = await flowService.updateOption(optionId, { is_active: 0 });
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to delete option');
             }
@@ -561,15 +560,15 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             // Determine what type of handle was connected
             if (sourceHandle === 'default-output') {
                 // Flow-level next_flow connection
-                await apiClient.put(`/bot_flows/${sourceFlowId}`, { next_flow_id: targetFlowId });
+                await flowService.updateFlow(sourceFlowId, { next_flow_id: targetFlowId });
             } else if (sourceHandle?.startsWith('option-')) {
                 // Option-level branching connection
                 const optionId = parseInt(sourceHandle.replace('option-', ''));
-                await apiClient.put(`/bot_dialog_options/${optionId}`, { next_flow_id: targetFlowId });
+                await flowService.updateOption(optionId, { next_flow_id: targetFlowId });
             } else if (sourceHandle?.startsWith('dialog-')) {
                 // Dialog-level next_flow override
                 const dialogId = parseInt(sourceHandle.replace('dialog-', ''));
-                await apiClient.put(`/bot_dialogs/${dialogId}`, { next_flow_id: targetFlowId });
+                await flowService.updateDialog(dialogId, { next_flow_id: targetFlowId });
             }
             const { activeTemplateId } = get();
             if (activeTemplateId) {

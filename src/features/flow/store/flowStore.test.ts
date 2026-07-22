@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { useFlowStore } from './flowStore';
-import apiClient from '../config/api';
+import apiClient from '../../../config/api';
 
 // Mock the API client
-vi.mock('../config/api', () => {
+vi.mock('../../../config/api', () => {
     return {
         default: {
             get: vi.fn(),
@@ -83,6 +83,7 @@ describe('flowStore', () => {
         });
 
         it('handles API errors silently and keeps templates empty', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network error'));
 
             await useFlowStore.getState().loadTemplates(1);
@@ -90,6 +91,7 @@ describe('flowStore', () => {
             const state = useFlowStore.getState();
             expect(state.templates).toEqual([]);
             expect(state.pagination.total).toBe(0);
+            consoleSpy.mockRestore();
         });
     });
 
@@ -162,7 +164,7 @@ describe('flowStore', () => {
                 if (url === `/bot_templates/${templateId}`) {
                     return Promise.resolve({ id: templateId, name: 'Tpl 10', media_id: '4' });
                 }
-                if (url === `/bot_flows?bot_template_id=${templateId}&is_active=1&limit=100`) {
+                if (url === `/bot_flows?bot_template_id=${templateId}&is_active=1&limit=1000`) {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -190,7 +192,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_flow_types?is_active=1&limit=100') {
+                if (url === '/bot_flow_types?is_active=1&limit=1000') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -200,7 +202,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialog_types?is_active=1&limit=100') {
+                if (url === '/bot_dialog_types?is_active=1&limit=1000') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -210,7 +212,7 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialogs?bot_flow_id=101&is_active=1&limit=100') {
+                if (url === '/bot_dialogs?bot_flow_id=101&is_active=1&limit=1000') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -226,10 +228,10 @@ describe('flowStore', () => {
                         },
                     });
                 }
-                if (url === '/bot_dialogs?bot_flow_id=102&is_active=1&limit=100') {
+                if (url === '/bot_dialogs?bot_flow_id=102&is_active=1&limit=1000') {
                     return Promise.resolve({ data: { data: [] } });
                 }
-                if (url === '/bot_dialog_options?bot_dialog_id=501&is_active=1&limit=100') {
+                if (url === '/bot_dialog_options?bot_dialog_id=501&is_active=1&limit=1000') {
                     return Promise.resolve({
                         data: {
                             data: [
@@ -406,7 +408,7 @@ describe('flowStore', () => {
         it('uploadDialogHeaderFile uploads a file using FormData', async () => {
             vi.mocked(apiClient.put).mockResolvedValueOnce({ success: true });
             const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
-            
+
             const file = new File(['content'], 'test.png', { type: 'image/png' });
             await useFlowStore.getState().uploadDialogHeaderFile(501, file);
 
@@ -431,7 +433,7 @@ describe('flowStore', () => {
         it('createMediaDialog uploads media file using FormData', async () => {
             vi.mocked(apiClient.post).mockResolvedValueOnce({ success: true });
             const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
-            
+
             const file = new File(['content'], 'vid.mp4', { type: 'video/mp4' });
             const data = { bot_flow_id: 99, bot_dialog_type_id: 6, sequence: 1, body: 'Caption' };
             await useFlowStore.getState().createMediaDialog(data, file);
@@ -446,7 +448,7 @@ describe('flowStore', () => {
         it('updateMediaDialog updates media file using FormData', async () => {
             vi.mocked(apiClient.put).mockResolvedValueOnce({ success: true });
             const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
-            
+
             const file = new File(['content'], 'vid.mp4', { type: 'video/mp4' });
             const data = { body: 'New Caption' };
             await useFlowStore.getState().updateMediaDialog(501, data, file);

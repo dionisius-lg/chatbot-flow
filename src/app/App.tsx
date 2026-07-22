@@ -8,12 +8,12 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import { useAuthStore } from './store/authStore';
+import { useAuthStore } from '../features/auth/store/authStore';
 
 // Dynamic import (lazy loading) for views
-const Login = lazy(() => import('./views/Login'));
-const Dashboard = lazy(() => import('./views/Dashboard'));
-const Builder = lazy(() => import('./views/Builder'));
+const Login = lazy(() => import('../features/auth/components/Login'));
+const Dashboard = lazy(() => import('../features/dashboard/components/Dashboard'));
+const Builder = lazy(() => import('../features/flow/components/Builder'));
 
 // Simple loading indicator for lazy-loaded route transitions
 const PageLoader = () => (

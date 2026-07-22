@@ -1,18 +1,14 @@
-// ============================================================================
-// BotFlowNode — Custom React Flow Node
-// ============================================================================
-// Renders one flow as a visual node on the canvas:
-// - Header: Flow ID, name, START badge (if is_initial)
-// - Flow type badge (color-coded by type)
-// - Dialog previews (max 4 items)
-// - Options section with individual source handles for branching
-// - Target handle (left) and default source handle (right)
-// ============================================================================
-
+/**
+ * BotFlowNode (Custom Node for React Flow)
+ *
+ * This component is responsible for rendering a single "Flow" node box
+ * on the visual graph canvas (React Flow).
+ * Displays the Flow ID, start badge, and a summary of dialogs inside it.
+ */
 import { Handle, Position } from '@xyflow/react';
 import { memo } from 'react';
 
-import type { FlowNodeData, BotDialog, BotDialogOption } from '../../types';
+import type { FlowNodeData, BotDialog, BotDialogOption } from '../../../types';
 
 function getDialogPreviewText(dialog: BotDialog): string {
     if (dialog.body) {

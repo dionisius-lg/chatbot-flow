@@ -137,27 +137,37 @@ export function resolveBaseUrl(serverIp: string): string {
 }
 
 // ─── Request Interceptor ────────────────────────────────────────────────────
-// Sets baseURL from serverIp and attaches Bearer token
+// This interceptor runs automatically BEFORE every request is sent to the backend.
+// Main responsibilities:
+// 1. Retrieve the Server IP from storage and construct the target URL (baseURL).
+// 2. Retrieve the encrypted Authentication Token (Bearer token), decrypt it, and attach it to the Header.
 apiClient.interceptors.request.use(async (config) => {
+    // Retrieve Server IP/Domain
     const serverIp = getStoredUrl();
     if (!serverIp) {
+        // If there's no server IP (empty session), forcefully redirect to the login page
         window.location.href = '/login';
         return Promise.reject(new Error('No server IP set'));
     }
     config.baseURL = resolveBaseUrl(serverIp);
+
     if (!(config.data instanceof FormData)) {
         config.headers['Content-Type'] = 'application/json';
     }
 
+    // Retrieve and decrypt the session token
     const auth = await getStoredAuth();
     if (auth?.token) {
+        // Attach the token to the Authorization header so the backend approves the request
         config.headers['Authorization'] = `Bearer ${auth.token}`;
     }
     return config;
 });
 
 // ─── Response Interceptor ───────────────────────────────────────────────────
-// Handles 401 errors: auto-refresh token (max 3 retries with queue)
+// This interceptor catches responses from the backend before they are received by our React components.
+// Main responsibility: Handle HTTP 401 (Unauthorized) errors by performing an "Auto-Refresh Token"
+// transparently in the background, so the user doesn't have to re-login.
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -170,7 +180,7 @@ apiClient.interceptors.response.use(
             originalRequest._retryCount = 0;
         }
 
-        // If 401 with response_code 41 (token expired) and retries remain
+        // If 401 error (token expired) AND retries are still available
         if (
             status === 401 &&
             (responseCode === 41 || responseCode === undefined) &&
@@ -187,8 +197,9 @@ apiClient.interceptors.response.use(
                     }
 
                     // Request token refresh
+                    const baseUrl = resolveBaseUrl(auth.serverIp);
                     const refreshResponse = await axios.post(
-                        `http://${auth.serverIp}:8000/token/refresh`,
+                        `${baseUrl}/token/refresh`,
                         {},
                         {
                             headers: {

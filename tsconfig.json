@@ -7,16 +7,18 @@
         "skipLibCheck": true,
         "jsx": "react-jsx",
 
-        /* Bundler mode */
+        /* Bundler mode: tells TS that we are using a bundler like Vite */
         "moduleResolution": "bundler",
         "allowImportingTsExtensions": true,
         "verbatimModuleSyntax": true,
         "moduleDetection": "force",
         "noEmit": true,
 
-        /* Linting */
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
+        /* Linting: strict TypeScript compiler rules */
+        // Ensures there are no unused local variables (e.g. const x = 1)
+        "noUnusedLocals": true,
+        // Ensures there are no unused function parameters (e.g. function(a, b))
+        "noUnusedParameters": true,
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true
     },

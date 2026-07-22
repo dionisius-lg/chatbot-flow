@@ -29,7 +29,7 @@ import { useCallback, useRef, useEffect, useState } from 'react';
 
 import '@xyflow/react/dist/style.css';
 import BotFlowNode from './BotFlowNode';
-import { useFlowStore } from '../../store/flowStore';
+import { useFlowStore } from '../store/flowStore';
 
 // Register custom node type for React Flow
 const nodeTypes = { botFlowNode: BotFlowNode } as NodeTypes;
