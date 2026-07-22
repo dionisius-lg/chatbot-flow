@@ -1,49 +1,53 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-surface: #f8fafc;
-  --color-border: #e2e8f0;
-  --color-text: #1e293b;
-  --color-text-muted: #64748b;
+    --color-primary: #6366f1;
+    --color-primary-hover: #4f46e5;
+    --color-surface: #f8fafc;
+    --color-border: #e2e8f0;
+    --color-text: #1e293b;
+    --color-text-muted: #64748b;
 }
 
 body {
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #f1f5f9;
-  color: var(--color-text);
+    margin: 0;
+    font-family:
+        'Inter',
+        system-ui,
+        -apple-system,
+        sans-serif;
+    background: #f1f5f9;
+    color: var(--color-text);
 }
 
 /* ─── React Flow overrides ───────────────────────────────────────── */
 .react-flow__node {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .react-flow__handle {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
-  background: #94a3b8;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #fff;
+    background: #94a3b8;
 }
 
 .react-flow__handle-connecting {
-  background: #6366f1;
+    background: #6366f1;
 }
 
 .react-flow__node.selected .bot-flow-node {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }
 
 /* ─── Responsive: hide minimap on small screens ───────────────────── */
 @media (max-width: 767px) {
-  .react-flow__minimap {
-    display: none !important;
-  }
-  .react-flow__controls {
-    transform: scale(0.8);
-    transform-origin: bottom left;
-  }
+    .react-flow__minimap {
+        display: none !important;
+    }
+    .react-flow__controls {
+        transform: scale(0.8);
+        transform-origin: bottom left;
+    }
 }
