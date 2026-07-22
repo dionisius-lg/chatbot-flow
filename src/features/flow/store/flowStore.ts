@@ -151,6 +151,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     // Fetch templates from API with pagination (limit=5)
     loadTemplates: async (page = 1) => {
         const perPage = 5;
+        set({ loading: true });
         try {
             const res = await flowService.getTemplates(page, perPage);
             const data = res.data || [];
@@ -167,6 +168,8 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             set({ templates: Array.isArray(data) ? data : [], pagination });
         } catch (err) {
             console.error('Failed to load templates:', err);
+        } finally {
+            set({ loading: false });
         }
     },
 
