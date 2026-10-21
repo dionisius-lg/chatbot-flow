@@ -24,3 +24,24 @@ export const DIALOG_TYPES: Record<number, { label: string; hasOptions: boolean }
     6: { label: 'Media', hasOptions: false },
     7: { label: 'Text Pre Ask Data', hasOptions: false },
 };
+
+// Media ID -> Label
+export const MEDIA_LABELS: Record<string, string> = {
+    '4': 'WhatsApp',
+    '5': 'Facebook Message',
+    '13': 'Instagram Message',
+    '18': 'Live Chat',
+};
+
+// Media options for form dropdowns
+export const MEDIA_OPTIONS = [
+    { id: '4', name: 'WhatsApp' },
+    { id: '5', name: 'Facebook Message' },
+    { id: '13', name: 'Instagram Message' },
+    { id: '18', name: 'Live Chat' },
+];
+
+export function getMediaLabel(mediaId: string): string {
+    return MEDIA_LABELS[mediaId] || `Media #${mediaId}`;
+}
+

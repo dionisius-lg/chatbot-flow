@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 import OptionsEditor from './OptionsEditor';
 import { useFlowStore } from '../store/flowStore';
@@ -40,6 +40,14 @@ export default function DialogEditor({ dialog, setError }: Props) {
     const [savingAction, setSavingAction] = useState<string | null>(null);
 
     const isWhatsApp = activeTemplate?.media_id === '4';
+    const isSocmed = activeTemplate?.media_id === '5' || activeTemplate?.media_id === '13';
+
+    const availableDialogTypes = useMemo(() => {
+        if (isSocmed) {
+            return dialogTypes.filter((dt) => dt.id !== 2 && dt.id !== 3);
+        }
+        return dialogTypes;
+    }, [dialogTypes, isSocmed]);
 
     let headerDisplay = '';
     let headerFormat: 'none' | 'text' | 'image' = 'none';
@@ -287,7 +295,7 @@ export default function DialogEditor({ dialog, setError }: Props) {
                                 }}
                                 className='w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 outline-none'
                             >
-                                {dialogTypes.map((dt) => (
+                                {availableDialogTypes.map((dt) => (
                                     <option key={dt.id} value={dt.id}>
                                         {dt.name}
                                     </option>
