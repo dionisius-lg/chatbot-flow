@@ -11,7 +11,7 @@
 // - Add Dialog form with type and body fields
 // ============================================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import DialogEditor from './DialogEditor';
 import { isEmpty } from '../../../lib/value';
@@ -30,6 +30,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
     const selectedNodeId = useFlowStore((s) => s.selectedNodeId);
     const flowTypes = useFlowStore((s) => s.flowTypes);
     const dialogTypes = useFlowStore((s) => s.dialogTypes);
+    const activeTemplate = useFlowStore((s) => s.activeTemplate);
     const updateFlow = useFlowStore((s) => s.updateFlow);
     const deleteFlow = useFlowStore((s) => s.deleteFlow);
     const saving = useFlowStore((s) => s.saving);
@@ -40,6 +41,15 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
     const selectedNode = nodes.find((n) => n.id === selectedNodeId);
     const flow = selectedNode?.data?.flow;
     const dialogs: BotDialog[] = (selectedNode?.data?.dialogs || []) as BotDialog[];
+
+    // Filter dialog types: Facebook Message (5) and Instagram Message (13) do not support Reply List (2) and Reply Button (3)
+    const isSocmed = activeTemplate?.media_id === '5' || activeTemplate?.media_id === '13';
+    const availableDialogTypes = useMemo(() => {
+        if (isSocmed) {
+            return dialogTypes.filter((dt) => dt.id !== 2 && dt.id !== 3);
+        }
+        return dialogTypes;
+    }, [dialogTypes, isSocmed]);
 
     // ─── Local form state ───────────────────────────────────────────────────
     const [editName, setEditName] = useState('');
@@ -68,6 +78,13 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             setError(null);
         }
     }, [flow]);
+
+    // Ensure newDialogType is valid for FB/IG media
+    useEffect(() => {
+        if (isSocmed && (newDialogType === 2 || newDialogType === 3)) {
+            setNewDialogType(1);
+        }
+    }, [isSocmed, newDialogType]);
 
     // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -366,7 +383,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                 onChange={(e) => setNewDialogType(Number(e.target.value))}
                                 className='w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 outline-none'
                             >
-                                {dialogTypes.map((dt) => (
+                                {availableDialogTypes.map((dt) => (
                                     <option key={dt.id} value={dt.id}>
                                         {dt.name}
                                     </option>

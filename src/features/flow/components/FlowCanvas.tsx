@@ -43,6 +43,7 @@ export default function FlowCanvas() {
     const selectNode = useFlowStore((s) => s.selectNode);
     const onConnect = useFlowStore((s) => s.onConnect);
     const activeTemplateId = useFlowStore((s) => s.activeTemplateId);
+    const flows = useFlowStore((s) => s.flows);
     const flowTypes = useFlowStore((s) => s.flowTypes);
     const loading = useFlowStore((s) => s.loading);
 
@@ -54,6 +55,7 @@ export default function FlowCanvas() {
     const [showNewFlow, setShowNewFlow] = useState(false);
     const [newFlowName, setNewFlowName] = useState('');
     const [newFlowType, setNewFlowType] = useState(1);
+    const [newFlowInitial, setNewFlowInitial] = useState(false);
     const [creatingFlow, setCreatingFlow] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -102,23 +104,27 @@ export default function FlowCanvas() {
         setError(null);
         try {
             const store = useFlowStore.getState();
+            // Automatically set as initial node if canvas has no flows or no initial flow
+            const shouldBeInitial =
+                newFlowInitial || store.flows.length === 0 || !store.flows.some((f) => f.is_initial === 1);
             await store.createFlow({
                 bot_template_id: activeTemplateId,
                 name: newFlowName.trim(),
                 bot_flow_type_id: newFlowType,
-                is_initial: 0,
+                is_initial: shouldBeInitial ? 1 : 0,
                 next_flow_id: 0,
                 timeout_duration: 0,
                 is_active: 1,
             });
             setNewFlowName('');
+            setNewFlowInitial(false);
             setShowNewFlow(false);
         } catch (err: any) {
             setError(err.message || 'Failed to create node');
         } finally {
             setCreatingFlow(false);
         }
-    }, [activeTemplateId, newFlowName, newFlowType, creatingFlow]);
+    }, [activeTemplateId, newFlowName, newFlowType, newFlowInitial, creatingFlow]);
 
     return (
         <div className='flex-1 relative' ref={reactFlowWrapper}>
@@ -178,7 +184,15 @@ export default function FlowCanvas() {
             {/* ─── Add Node Button (floating, top-right) ────────────────────────── */}
             <div className='absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex gap-2'>
                 <button
-                    onClick={() => setShowNewFlow(!showNewFlow)}
+                    onClick={() => {
+                        if (!showNewFlow) {
+                            setNewFlowName('');
+                            setNewFlowType(1);
+                            // Auto-check initial if template has no flows or no initial node yet
+                            setNewFlowInitial(flows.length === 0 || !flows.some((f) => f.is_initial === 1));
+                        }
+                        setShowNewFlow(!showNewFlow);
+                    }}
                     className='bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md text-xs sm:text-sm font-medium transition-colors cursor-pointer'
                 >
                     + Add Node
@@ -224,6 +238,22 @@ export default function FlowCanvas() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                        <div>
+                            <label className='flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none'>
+                                <input
+                                    type='checkbox'
+                                    checked={newFlowInitial}
+                                    onChange={(e) => setNewFlowInitial(e.target.checked)}
+                                    className='rounded text-indigo-600 focus:ring-indigo-500'
+                                />
+                                <span>Initial Node (Start of flow)</span>
+                            </label>
+                            {newFlowInitial && (
+                                <span className='text-[10px] text-gray-400 mt-0.5 block'>
+                                    This node serves as the starting point of the conversation flow.
+                                </span>
+                            )}
                         </div>
                         <div className='flex gap-2'>
                             <button

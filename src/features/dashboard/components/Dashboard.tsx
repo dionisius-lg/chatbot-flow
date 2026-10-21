@@ -13,17 +13,9 @@ import Pagination from '../../../shared/components/ui/Pagination';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFlowStore } from '../../flow/store/flowStore';
 
+import MediaIcon from './MediaIcon';
+import { MEDIA_OPTIONS, getMediaLabel } from '../../../constants';
 import type { BotTemplate } from '../../../types';
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-const MEDIA_LABELS: Record<string, string> = {
-    '4': 'WhatsApp',
-    '18': 'Live Chat',
-};
-
-function getMediaLabel(mediaId: string): string {
-    return MEDIA_LABELS[mediaId] || `Media #${mediaId}`;
-}
 
 export default function Dashboard() {
     // ─── Store selectors ─────────────────────────────────────────────────────
@@ -83,7 +75,7 @@ export default function Dashboard() {
         }
     };
 
-    // Update existing template (name & media only)
+    // Update existing template (name only, media_id is omitted)
     const handleUpdate = async () => {
         if (!editTemplate || !formName.trim() || submitting) {
             return;
@@ -91,7 +83,7 @@ export default function Dashboard() {
         setSubmitting(true);
         try {
             setError(null);
-            await updateTemplate(editTemplate.id, { name: formName.trim(), media_id: formMediaId || '4' });
+            await updateTemplate(editTemplate.id, { name: formName.trim() });
             setEditTemplate(null);
             setFormName('');
             setFormMediaId('');
@@ -215,11 +207,9 @@ export default function Dashboard() {
                         key={tpl.id}
                         className='bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-md transition sm:flex sm:items-center sm:justify-between'
                     >
-                        {/* Avatar + template info */}
+                        {/* Media icon + template info */}
                         <div className='flex items-center gap-3 sm:gap-4 min-w-0 flex-1'>
-                            <div className='w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold shrink-0'>
-                                {tpl.name?.charAt(0)?.toUpperCase() || 'T'}
-                            </div>
+                            <MediaIcon mediaId={tpl.media_id} />
                             <div className='min-w-0 flex-1'>
                                 <h3 className='text-sm sm:font-medium text-gray-800 truncate'>{tpl.name}</h3>
                                 <div className='flex items-center gap-2 sm:gap-3 text-xs text-gray-400 mt-0.5 flex-wrap'>
@@ -244,27 +234,27 @@ export default function Dashboard() {
                             </div>
                         </div>
                         {/* Action buttons */}
-                        <div className='flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0 sm:mt-0 sm:ml-4 sm:shrink-0'>
+                        <div className='flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0 sm:mt-0 sm:ml-4 sm:shrink-0'>
                             <button
                                 onClick={() => handleToggleActive(tpl)}
                                 disabled={submitting}
-                                className={`text-xs border px-2 sm:px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 ${
+                                className={`text-xs border px-2 sm:px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 ${
                                     tpl.is_active
-                                        ? 'text-orange-600 border-orange-200 hover:bg-orange-50'
-                                        : 'text-green-600 border-green-200 hover:bg-green-50'
+                                        ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 hover:text-rose-700'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-800'
                                 }`}
                             >
                                 {tpl.is_active ? 'Deactivate' : 'Activate'}
                             </button>
                             <button
                                 onClick={() => openEdit(tpl)}
-                                className='text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-indigo-50 cursor-pointer'
+                                className='text-xs text-gray-600 hover:text-indigo-600 border border-gray-200 px-2 sm:px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-50 transition-colors cursor-pointer'
                             >
                                 Edit
                             </button>
                             <button
                                 onClick={() => navigate(`/builder/${tpl.id}`)}
-                                className='text-xs bg-indigo-600 text-white px-3 sm:px-4 py-1.5 rounded-lg hover:bg-indigo-700 cursor-pointer'
+                                className='text-xs bg-indigo-600 text-white px-3 sm:px-4 py-1.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors cursor-pointer'
                             >
                                 Open
                             </button>
@@ -309,7 +299,7 @@ export default function Dashboard() {
                             setShowCreate(true);
                             setEditTemplate(null);
                             setFormName('');
-                            setFormMediaId('');
+                            setFormMediaId('4');
                         }}
                         className='bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer'
                     >
@@ -349,14 +339,29 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <label className='text-xs text-gray-500 block mb-1'>Media</label>
-                                <select
-                                    value={formMediaId}
-                                    onChange={(e) => setFormMediaId(e.target.value)}
-                                    className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
-                                >
-                                    <option value='4'>WhatsApp</option>
-                                    <option value='18'>Live Chat</option>
-                                </select>
+                                {editTemplate ? (
+                                    <div>
+                                        <input
+                                            type='text'
+                                            readOnly
+                                            disabled
+                                            value={getMediaLabel(formMediaId)}
+                                            className='w-full border border-gray-200 bg-gray-100 text-gray-500 rounded-lg px-3 py-2 text-sm cursor-not-allowed select-none'
+                                        />
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={formMediaId}
+                                        onChange={(e) => setFormMediaId(e.target.value)}
+                                        className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
+                                    >
+                                        {MEDIA_OPTIONS.map((opt) => (
+                                            <option key={opt.id} value={opt.id}>
+                                                {opt.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                             <div className='flex gap-2'>
                                 <button
