@@ -40,6 +40,8 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
     const { flow, flowTypeName, flowTypeColor, dialogs, options } = data;
     const isInitial = flow.is_initial === 1;
     const isActive = flow.is_active === 1;
+    const isTerminal = [2, 3, 4].includes(flow.bot_flow_type_id);
+    const isInvalid = flow.bot_flow_type_id === 4;
 
     // Icon mapping for each dialog type (based on bot_dialog_type_id)
     const dialogIcons: Record<number, string> = {
@@ -58,7 +60,9 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
             style={{ width: 240 }}
         >
             {/* ─── Target Handle (input connection from other nodes) ───────────── */}
-            <Handle type='target' position={Position.Left} className='!w-3 !h-3 !bg-gray-400 !border-2 !border-white' />
+            {!isInvalid && (
+                <Handle type='target' position={Position.Left} className='!w-3 !h-3 !bg-gray-400 !border-2 !border-white' />
+            )}
 
             {/* ─── Header: Flow ID + Name ──────────────────────────────────────── */}
             <div className='px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2'>
@@ -129,13 +133,15 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
             )}
 
             {/* ─── Default Source Handle (next_flow_id) ─────────────────────────── */}
-            <Handle
-                type='source'
-                position={Position.Right}
-                id='default-output'
-                className='!w-3 !h-3 !bg-gray-400 !border-2 !border-white'
-                style={{ top: 12, right: -8 }}
-            />
+            {!isTerminal && (
+                <Handle
+                    type='source'
+                    position={Position.Right}
+                    id='default-output'
+                    className='!w-3 !h-3 !bg-gray-400 !border-2 !border-white'
+                    style={{ top: 12, right: -8 }}
+                />
+            )}
         </div>
     );
 }

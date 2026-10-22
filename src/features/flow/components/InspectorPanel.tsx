@@ -14,6 +14,7 @@
 import { useState, useEffect, useMemo } from 'react';
 
 import DialogEditor from './DialogEditor';
+import { getAllowedDialogTypes } from '../../../constants';
 import { isEmpty } from '../../../lib/value';
 import { useFlowStore } from '../store/flowStore';
 
@@ -42,15 +43,6 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
     const flow = selectedNode?.data?.flow;
     const dialogs: BotDialog[] = (selectedNode?.data?.dialogs || []) as BotDialog[];
 
-    // Filter dialog types: Facebook Message (5) and Instagram Message (13) do not support Reply List (2) and Reply Button (3)
-    const isSocmed = activeTemplate?.media_id === '5' || activeTemplate?.media_id === '13';
-    const availableDialogTypes = useMemo(() => {
-        if (isSocmed) {
-            return dialogTypes.filter((dt) => dt.id !== 2 && dt.id !== 3);
-        }
-        return dialogTypes;
-    }, [dialogTypes, isSocmed]);
-
     // ─── Local form state ───────────────────────────────────────────────────
     const [editName, setEditName] = useState('');
     const [editTypeId, setEditTypeId] = useState(1);
@@ -61,10 +53,21 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
     const [showNewDialog, setShowNewDialog] = useState(false);
     const [newDialogType, setNewDialogType] = useState(1);
     const [newDialogBody, setNewDialogBody] = useState('');
+    const [newShortcode, setNewShortcode] = useState('');
     const [savingFlow, setSavingFlow] = useState(false);
     const [addingDialog, setAddingDialog] = useState(false);
     const [newMediaFile, setNewMediaFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Filter dialog types based on flow type and media conditions
+    const isSocmed = activeTemplate?.media_id === '5' || activeTemplate?.media_id === '13';
+    const availableDialogTypes = useMemo(() => {
+        const allowedIds = getAllowedDialogTypes(editTypeId, isSocmed);
+        return dialogTypes.filter((dt) => allowedIds.includes(dt.id));
+    }, [dialogTypes, editTypeId, isSocmed]);
+
+    // Check if the current flow type is terminal/standalone (Direct Agent, Close Ticket, Invalid)
+    const isTerminalFlowType = [2, 3, 4].includes(editTypeId);
 
     // Sync form state when flow changes (e.g., after reload or node switch)
     useEffect(() => {
@@ -73,18 +76,18 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             setEditTypeId(flow.bot_flow_type_id);
             setEditTimeout(flow.timeout_duration);
             setEditInitial(flow.is_initial);
-            setEditNextFlowId(flow.next_flow_id);
+            setEditNextFlowId([2, 3, 4].includes(flow.bot_flow_type_id) ? 0 : flow.next_flow_id);
             setDirty(false);
             setError(null);
         }
     }, [flow]);
 
-    // Ensure newDialogType is valid for FB/IG media
+    // Ensure newDialogType is valid when availableDialogTypes changes
     useEffect(() => {
-        if (isSocmed && (newDialogType === 2 || newDialogType === 3)) {
-            setNewDialogType(1);
+        if (availableDialogTypes.length > 0 && !availableDialogTypes.some((dt) => dt.id === newDialogType)) {
+            setNewDialogType(availableDialogTypes[0].id);
         }
-    }, [isSocmed, newDialogType]);
+    }, [availableDialogTypes, newDialogType]);
 
     // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -101,7 +104,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                 bot_flow_type_id: editTypeId,
                 timeout_duration: editTimeout,
                 is_initial: editInitial,
-                next_flow_id: editNextFlowId,
+                next_flow_id: isTerminalFlowType ? 0 : editNextFlowId,
             });
             setDirty(false);
         } catch (err: any) {
@@ -143,16 +146,21 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                     newMediaFile!,
                 );
             } else {
-                await createDialog({
+                const payload: Partial<BotDialog> = {
                     bot_flow_id: flow.id,
                     bot_dialog_type_id: newDialogType,
                     body: newDialogBody,
                     sequence: dialogs.length + 1,
                     is_active: 1,
-                });
+                };
+                if (newDialogType === 5) {
+                    payload.shortcode = newShortcode.trim();
+                }
+                await createDialog(payload);
             }
             setShowNewDialog(false);
             setNewDialogBody('');
+            setNewShortcode('');
             setNewMediaFile(null);
         } catch (err: any) {
             setError(err.message || 'Failed to add dialog');
@@ -292,7 +300,11 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                             <select
                                 value={editTypeId}
                                 onChange={(e) => {
-                                    setEditTypeId(Number(e.target.value));
+                                    const newTypeId = Number(e.target.value);
+                                    setEditTypeId(newTypeId);
+                                    if ([2, 3, 4].includes(newTypeId)) {
+                                        setEditNextFlowId(0);
+                                    }
                                     setDirty(true);
                                 }}
                                 className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
@@ -323,23 +335,34 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                     <div>
                         <label className='text-xs text-gray-500 block mb-1'>Next Node</label>
                         <select
-                            value={editNextFlowId}
+                            value={isTerminalFlowType ? 0 : editNextFlowId}
+                            disabled={isTerminalFlowType}
                             onChange={(e) => {
                                 setEditNextFlowId(Number(e.target.value));
                                 setDirty(true);
                             }}
-                            className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
+                            className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${
+                                isTerminalFlowType
+                                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'border-gray-300 focus:ring-2 focus:ring-indigo-500'
+                            }`}
                         >
                             <option value={0}>None</option>
-                            {useFlowStore
-                                .getState()
-                                .flows.filter((f) => f.id !== flow.id)
-                                .map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.name || `Node #${f.id}`}
-                                    </option>
-                                ))}
+                            {!isTerminalFlowType &&
+                                useFlowStore
+                                    .getState()
+                                    .flows.filter((f) => f.id !== flow.id && ![4, 5].includes(f.bot_flow_type_id))
+                                    .map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.name || `Node #${f.id}`}
+                                        </option>
+                                    ))}
                         </select>
+                        {isTerminalFlowType && (
+                            <p className='text-[11px] text-gray-400 mt-1 italic'>
+                                This node type is terminal/standalone and cannot have a next node.
+                            </p>
+                        )}
                     </div>
 
                     {/* Checkboxes: is_initial & is_active */}
@@ -411,6 +434,20 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                         placeholder='Message text...'
                                     />
                                 </div>
+                                {newDialogType === 5 && (
+                                    <div>
+                                        <label className='text-xs text-gray-500 block mb-1'>
+                                            Shortcode <span className='text-red-500'>*</span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={newShortcode}
+                                            onChange={(e) => setNewShortcode(e.target.value)}
+                                            className='w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none'
+                                            placeholder='e.g. name, gender, age'
+                                        />
+                                    </div>
+                                )}
                             </>
                         )}
                         <button
@@ -418,6 +455,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                             className='w-full text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-1'
                             disabled={
                                 (newDialogType !== 6 && !newDialogBody.trim()) ||
+                                (newDialogType === 5 && !newShortcode.trim()) ||
                                 (newDialogType === 6 && !newMediaFile) ||
                                 addingDialog
                             }
@@ -452,7 +490,12 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                 {/* ─── Dialog List ────────────────────────────────────────────────── */}
                 <div className='space-y-2'>
                     {dialogs.map((dialog) => (
-                        <DialogEditor key={dialog.id} dialog={dialog} setError={setError} />
+                        <DialogEditor
+                            key={dialog.id}
+                            dialog={dialog}
+                            flowTypeId={editTypeId}
+                            setError={setError}
+                        />
                     ))}
                     {isEmpty(dialogs) && (
                         <div className='text-xs text-gray-400 text-center py-4'>

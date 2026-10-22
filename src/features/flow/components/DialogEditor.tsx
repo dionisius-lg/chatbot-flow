@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 
 import OptionsEditor from './OptionsEditor';
+import { getAllowedDialogTypes } from '../../../constants';
 import { useFlowStore } from '../store/flowStore';
 
 import type { BotDialog } from '../../../types';
 
 interface Props {
     dialog: BotDialog;
+    flowTypeId?: number;
     setError?: (err: string | null) => void;
 }
 
-export default function DialogEditor({ dialog, setError }: Props) {
+export default function DialogEditor({ dialog, flowTypeId, setError }: Props) {
     const updateDialog = useFlowStore((s) => s.updateDialog);
     const updateMediaDialog = useFlowStore((s) => s.updateMediaDialog);
     const deleteDialog = useFlowStore((s) => s.deleteDialog);
@@ -42,12 +44,17 @@ export default function DialogEditor({ dialog, setError }: Props) {
     const isWhatsApp = activeTemplate?.media_id === '4';
     const isSocmed = activeTemplate?.media_id === '5' || activeTemplate?.media_id === '13';
 
+    const parentFlow = useMemo(() => {
+        return flows.find((f) => f.id === dialog.bot_flow_id);
+    }, [flows, dialog.bot_flow_id]);
+
+    const currentFlowTypeId = flowTypeId ?? parentFlow?.bot_flow_type_id ?? 1;
+    const isTerminalFlowType = [2, 3, 4].includes(currentFlowTypeId);
+
     const availableDialogTypes = useMemo(() => {
-        if (isSocmed) {
-            return dialogTypes.filter((dt) => dt.id !== 2 && dt.id !== 3);
-        }
-        return dialogTypes;
-    }, [dialogTypes, isSocmed]);
+        const allowedIds = getAllowedDialogTypes(currentFlowTypeId, isSocmed);
+        return dialogTypes.filter((dt) => allowedIds.includes(dt.id));
+    }, [dialogTypes, currentFlowTypeId, isSocmed]);
 
     let headerDisplay = '';
     let headerFormat: 'none' | 'text' | 'image' = 'none';
@@ -98,17 +105,21 @@ export default function DialogEditor({ dialog, setError }: Props) {
         setEditBody(dialog.body || '');
         setEditSequence(dialog.sequence);
         setEditShortcode(dialog.shortcode || '');
-        setEditNextFlowId(dialog.next_flow_id || 0);
+        setEditNextFlowId(isTerminalFlowType ? 0 : dialog.next_flow_id || 0);
         setEditFooter(dialog.footer || '');
         setEditMedia(typeof dialog.media === 'string' ? dialog.media || '' : '');
         setEditOptionTitle(dialog.option_title || '');
         setShowHeaderTextInput(false);
         setNewHeaderText('');
         setDirty(false);
-    }, [dialog]);
+    }, [dialog, isTerminalFlowType]);
 
     const handleSave = async () => {
         if (savingAction) {
+            return;
+        }
+        if (editTypeId === 5 && !editShortcode.trim()) {
+            setError?.('Shortcode is required for Text Ask Data dialog');
             return;
         }
         setSavingAction('save');
@@ -120,22 +131,25 @@ export default function DialogEditor({ dialog, setError }: Props) {
                     {
                         bot_dialog_type_id: editTypeId,
                         sequence: editSequence,
-                        next_flow_id: editNextFlowId,
+                        next_flow_id: isTerminalFlowType ? 0 : editNextFlowId,
                         is_active: dialog.is_active,
                     },
                     editMediaFile || undefined,
                 );
             } else {
-                await updateDialog(dialog.id, {
+                const payload: Partial<BotDialog> = {
                     bot_dialog_type_id: editTypeId,
                     body: editBody,
                     sequence: editSequence,
-                    shortcode: editShortcode,
-                    next_flow_id: editNextFlowId,
+                    next_flow_id: isTerminalFlowType ? 0 : editNextFlowId,
                     footer: editFooter || null,
                     media: editMedia || null,
                     option_title: editOptionTitle || null,
-                });
+                };
+                if (editTypeId === 5) {
+                    payload.shortcode = editShortcode.trim();
+                }
+                await updateDialog(dialog.id, payload);
             }
             setDirty(false);
             setEditMediaFile(null);
@@ -240,7 +254,7 @@ export default function DialogEditor({ dialog, setError }: Props) {
                                 e.stopPropagation();
                                 handleSave();
                             }}
-                            disabled={saving || !!savingAction}
+                            disabled={saving || !!savingAction || (editTypeId === 5 && !editShortcode.trim())}
                             className='text-[10px] bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1'
                         >
                             {savingAction === 'save' ? (
@@ -482,7 +496,9 @@ export default function DialogEditor({ dialog, setError }: Props) {
 
                     {editTypeId === 5 && (
                         <div>
-                            <label className='text-[10px] text-gray-500 block mb-0.5'>Shortcode</label>
+                            <label className='text-[10px] text-gray-500 block mb-0.5'>
+                                Shortcode <span className='text-red-500'>*</span>
+                            </label>
                             <input
                                 type='text'
                                 value={editShortcode}
@@ -524,28 +540,39 @@ export default function DialogEditor({ dialog, setError }: Props) {
                     )}
 
                     <div>
-                        <label className='text-[10px] text-gray-500 block mb-0.5'>Next Flow (override)</label>
+                        <label className='text-[10px] text-gray-500 block mb-0.5'>Next Node (override)</label>
                         <select
-                            value={editNextFlowId}
+                            value={isTerminalFlowType ? 0 : editNextFlowId}
+                            disabled={isTerminalFlowType}
                             onChange={(e) => {
                                 setEditNextFlowId(Number(e.target.value));
                                 setDirty(true);
                             }}
-                            className='w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 outline-none'
+                            className={`w-full border rounded px-2 py-1 text-xs outline-none ${
+                                isTerminalFlowType
+                                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'border-gray-300 focus:ring-1 focus:ring-indigo-500'
+                            }`}
                         >
-                            <option value={0}>None (use flow default)</option>
-                            {flows
-                                .filter((f) => f.id !== dialog.bot_flow_id)
-                                .map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.name || `Flow #${f.id}`}
-                                    </option>
-                                ))}
+                            <option value={0}>None (use node default)</option>
+                            {!isTerminalFlowType &&
+                                flows
+                                    .filter((f) => f.id !== dialog.bot_flow_id && ![4, 5].includes(f.bot_flow_type_id))
+                                    .map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.name || `Flow #${f.id}`}
+                                        </option>
+                                    ))}
                         </select>
+                        {isTerminalFlowType && (
+                            <p className='text-[10px] text-gray-400 mt-0.5 italic'>
+                                This node type is terminal/standalone and cannot have a next node override.
+                            </p>
+                        )}
                     </div>
 
                     {hasOptions && (
-                        <OptionsEditor dialogId={dialog.id} options={dialog.options || []} setError={setError} />
+                        <OptionsEditor dialogId={dialog.id} flowId={dialog.bot_flow_id} options={dialog.options || []} setError={setError} />
                     )}
                 </div>
             )}

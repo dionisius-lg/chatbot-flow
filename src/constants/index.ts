@@ -45,3 +45,30 @@ export function getMediaLabel(mediaId: string): string {
     return MEDIA_LABELS[mediaId] || `Media #${mediaId}`;
 }
 
+/**
+ * Returns allowed dialog type IDs based on the parent flow type ID and media conditions.
+ * - Direct Agent (2) & Close Ticket (3): Text (1), Text Ask Data (5), Media (6)
+ * - Invalid (4): Text (1), Media (6)
+ * - Timeout (5): Text (1), Reply List (2), Reply Button (3), Text Menu (4), Media (6)
+ * - Normal (1) & others: all dialog types (1..7)
+ * - If isSocmed is true (FB / IG), Reply List (2) and Reply Button (3) are excluded across all flow types.
+ */
+export function getAllowedDialogTypes(flowTypeId: number, isSocmed: boolean = false): number[] {
+    let allowed: number[];
+    if (flowTypeId === 2 || flowTypeId === 3) {
+        allowed = [1, 5, 6];
+    } else if (flowTypeId === 4) {
+        allowed = [1, 6];
+    } else if (flowTypeId === 5) {
+        allowed = [1, 2, 3, 4, 6];
+    } else {
+        allowed = [1, 2, 3, 4, 5, 6, 7];
+    }
+
+    if (isSocmed) {
+        return allowed.filter((id) => id !== 2 && id !== 3);
+    }
+
+    return allowed;
+}
+

@@ -13,11 +13,12 @@ import type { BotDialogOption } from '../../../types';
 
 interface Props {
     dialogId: number;
+    flowId: number;
     options: BotDialogOption[];
     setError?: (err: string | null) => void;
 }
 
-export default function OptionsEditor({ dialogId, options, setError }: Props) {
+export default function OptionsEditor({ dialogId, flowId, options, setError }: Props) {
     const createOption = useFlowStore((s) => s.createOption);
     const updateOption = useFlowStore((s) => s.updateOption);
     const deleteOption = useFlowStore((s) => s.deleteOption);
@@ -150,7 +151,7 @@ export default function OptionsEditor({ dialogId, options, setError }: Props) {
                         className='w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 outline-none'
                     >
                         <option value={0}>No next node</option>
-                        {flows.map((f) => (
+                        {flows.filter((f) => f.id !== flowId && ![4, 5].includes(f.bot_flow_type_id)).map((f) => (
                             <option key={f.id} value={f.id}>
                                 {f.name || `Node #${f.id}`}
                             </option>
@@ -224,7 +225,7 @@ export default function OptionsEditor({ dialogId, options, setError }: Props) {
                                     className='w-full border border-gray-300 rounded px-2 py-0.5 text-xs outline-none'
                                 >
                                     <option value={0}>None</option>
-                                    {flows.map((f) => (
+                                    {flows.filter((f) => f.id !== flowId && ![4, 5].includes(f.bot_flow_type_id)).map((f) => (
                                         <option key={f.id} value={f.id}>
                                             {f.name || `Node #${f.id}`}
                                         </option>
