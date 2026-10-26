@@ -41,7 +41,7 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
     const isInitial = flow.is_initial === 1;
     const isActive = flow.is_active === 1;
     const isTerminal = [2, 3, 4].includes(flow.bot_flow_type_id);
-    const isInvalid = flow.bot_flow_type_id === 4;
+    const hasTargetHandle = ![4, 5].includes(flow.bot_flow_type_id);
 
     // Icon mapping for each dialog type (based on bot_dialog_type_id)
     const dialogIcons: Record<number, string> = {
@@ -60,7 +60,7 @@ function BotFlowNode({ data, selected }: BotFlowNodeProps) {
             style={{ width: 240 }}
         >
             {/* ─── Target Handle (input connection from other nodes) ───────────── */}
-            {!isInvalid && (
+            {hasTargetHandle && (
                 <Handle type='target' position={Position.Left} className='!w-3 !h-3 !bg-gray-400 !border-2 !border-white' />
             )}
 

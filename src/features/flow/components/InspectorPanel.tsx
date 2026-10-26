@@ -74,7 +74,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
         if (flow) {
             setEditName(flow.name || '');
             setEditTypeId(flow.bot_flow_type_id);
-            setEditTimeout(flow.timeout_duration);
+            setEditTimeout([2, 3, 4].includes(flow.bot_flow_type_id) ? 0 : flow.timeout_duration);
             setEditInitial(flow.is_initial);
             setEditNextFlowId([2, 3, 4].includes(flow.bot_flow_type_id) ? 0 : flow.next_flow_id);
             setDirty(false);
@@ -102,7 +102,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
             await updateFlow(flow.id, {
                 name: editName,
                 bot_flow_type_id: editTypeId,
-                timeout_duration: editTimeout,
+                timeout_duration: isTerminalFlowType ? 0 : Number(editTimeout),
                 is_initial: editInitial,
                 next_flow_id: isTerminalFlowType ? 0 : editNextFlowId,
             });
@@ -304,6 +304,7 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                                     setEditTypeId(newTypeId);
                                     if ([2, 3, 4].includes(newTypeId)) {
                                         setEditNextFlowId(0);
+                                        setEditTimeout(0);
                                     }
                                     setDirty(true);
                                 }}
@@ -320,12 +321,17 @@ export default function InspectorPanel({ showInspector, onClose }: InspectorPane
                             <label className='text-xs text-gray-500 block mb-1'>Timeout (s)</label>
                             <input
                                 type='number'
-                                value={editTimeout}
+                                value={isTerminalFlowType ? 0 : editTimeout}
+                                disabled={isTerminalFlowType}
                                 onChange={(e) => {
                                     setEditTimeout(Number(e.target.value));
                                     setDirty(true);
                                 }}
-                                className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none'
+                                className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${
+                                    isTerminalFlowType
+                                        ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                        : 'border-gray-300 focus:ring-2 focus:ring-indigo-500'
+                                }`}
                                 min={0}
                             />
                         </div>
