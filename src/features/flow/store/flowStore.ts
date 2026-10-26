@@ -291,7 +291,22 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     updateFlow: async (flowId, data) => {
         set({ saving: true });
         try {
-            const res = await flowService.updateFlow(flowId, data);
+            const payload = { ...data };
+            const existingFlow = get().flows.find((f) => f.id === flowId);
+            const currentTypeId = payload.bot_flow_type_id ?? existingFlow?.bot_flow_type_id;
+
+            if (currentTypeId !== undefined && [2, 3, 4].includes(currentTypeId)) {
+                if (payload.timeout_duration !== undefined || payload.bot_flow_type_id !== undefined) {
+                    payload.timeout_duration = 0;
+                }
+                if (payload.next_flow_id !== undefined || payload.bot_flow_type_id !== undefined) {
+                    payload.next_flow_id = 0;
+                }
+            } else if (payload.timeout_duration !== undefined) {
+                payload.timeout_duration = Number(payload.timeout_duration);
+            }
+
+            const res = await flowService.updateFlow(flowId, payload);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to update flow');
             }
@@ -307,7 +322,15 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     createFlow: async (data) => {
         set({ saving: true });
         try {
-            const res = await flowService.createFlow(data);
+            const payload = { ...data };
+            if (payload.bot_flow_type_id !== undefined && [2, 3, 4].includes(payload.bot_flow_type_id)) {
+                payload.timeout_duration = 0;
+                payload.next_flow_id = 0;
+            } else if (payload.timeout_duration !== undefined) {
+                payload.timeout_duration = Number(payload.timeout_duration);
+            }
+
+            const res = await flowService.createFlow(payload);
             if (res && res.success === false) {
                 throw new Error(res.message || 'Failed to create flow');
             }

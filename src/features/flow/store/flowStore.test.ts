@@ -327,6 +327,28 @@ describe('flowStore', () => {
             expect(mockLoadWorkspace).toHaveBeenCalledWith(10);
         });
 
+        it('createFlow enforces timeout_duration 0 and next_flow_id 0 for terminal flow types', async () => {
+            vi.mocked(apiClient.post).mockResolvedValueOnce({ id: 101, success: true });
+            const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
+
+            await useFlowStore.getState().createFlow({
+                bot_template_id: 10,
+                name: 'Direct Agent Flow',
+                bot_flow_type_id: 2,
+                timeout_duration: 30,
+                next_flow_id: 5,
+            });
+
+            expect(apiClient.post).toHaveBeenCalledWith('/bot_flows', {
+                bot_template_id: 10,
+                name: 'Direct Agent Flow',
+                bot_flow_type_id: 2,
+                timeout_duration: 0,
+                next_flow_id: 0,
+            });
+            expect(mockLoadWorkspace).toHaveBeenCalledWith(10);
+        });
+
         it('updateFlow updates a flow and reloads the workspace', async () => {
             vi.mocked(apiClient.put).mockResolvedValueOnce({ success: true });
             const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
@@ -334,6 +356,24 @@ describe('flowStore', () => {
             await useFlowStore.getState().updateFlow(99, { name: 'Updated Flow' });
 
             expect(apiClient.put).toHaveBeenCalledWith('/bot_flows/99', { name: 'Updated Flow' });
+            expect(mockLoadWorkspace).toHaveBeenCalledWith(10);
+        });
+
+        it('updateFlow enforces timeout_duration 0 and next_flow_id 0 for terminal flow types', async () => {
+            vi.mocked(apiClient.put).mockResolvedValueOnce({ success: true });
+            const mockLoadWorkspace = vi.spyOn(useFlowStore.getState(), 'loadWorkspace').mockResolvedValueOnce();
+
+            await useFlowStore.getState().updateFlow(99, {
+                bot_flow_type_id: 3,
+                timeout_duration: 15,
+                next_flow_id: 12,
+            });
+
+            expect(apiClient.put).toHaveBeenCalledWith('/bot_flows/99', {
+                bot_flow_type_id: 3,
+                timeout_duration: 0,
+                next_flow_id: 0,
+            });
             expect(mockLoadWorkspace).toHaveBeenCalledWith(10);
         });
 
