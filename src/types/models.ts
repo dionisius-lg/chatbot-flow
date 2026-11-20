@@ -14,6 +14,12 @@ export interface BotTemplate {
     updated: string | null;
 }
 
+export interface TemplateFilters {
+    name?: string;
+    media_id?: string;
+    is_active?: number;
+}
+
 export interface PaginationInfo {
     total: number;
     per_page: number;

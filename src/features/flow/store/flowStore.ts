@@ -20,6 +20,7 @@ import type {
     BotFlow,
     FlowNodeData,
     FlowStoreState,
+    TemplateFilters,
 } from '../../../types';
 
 // ─── Helper: Build React Flow nodes & edges from hierarchical data ───────────
@@ -130,7 +131,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     templates: [],
     pagination: {
         total: 0,
-        per_page: 5,
+        per_page: 4,
         current_page: 1,
         last_page: 1,
         paging: { current: 1, next: 1, previous: 1, first: 1, last: 1 },
@@ -145,15 +146,22 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
     activeTemplateId: null,
     loading: false,
     saving: false,
+    templateFilters: {},
 
     // ─── Template CRUD ─────────────────────────────────────────────────────
 
-    // Fetch templates from API with pagination (limit=5)
-    loadTemplates: async (page = 1) => {
-        const perPage = 5;
+    setTemplateFilters: (filters: TemplateFilters) => set({ templateFilters: filters }),
+
+    // Fetch templates from API with pagination (limit=4)
+    loadTemplates: async (page = 1, filters?: TemplateFilters) => {
+        const perPage = 4;
+        const activeFilters = filters !== undefined ? filters : get().templateFilters;
+        if (filters !== undefined) {
+            set({ templateFilters: filters });
+        }
         set({ loading: true });
         try {
-            const res = await flowService.getTemplates(page, perPage);
+            const res = await flowService.getTemplates(page, perPage, activeFilters);
             const data = res.data || [];
             const paging = res.paging ? { ...res.paging, previous: res.paging.previuos } : {};
             const totalData = res.total_data || 0;
@@ -180,7 +188,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             throw new Error(res.message || 'Failed to create template');
         }
         // Reload first page to see the new template
-        await get().loadTemplates(1);
+        await get().loadTemplates(1, get().templateFilters);
         return res;
     },
 
@@ -192,7 +200,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
         }
         // Reload current page
         const currentPage = get().pagination.current_page;
-        await get().loadTemplates(currentPage);
+        await get().loadTemplates(currentPage, get().templateFilters);
         return res;
     },
 
@@ -203,7 +211,7 @@ export const useFlowStore = create<FlowStoreState>((set, get) => ({
             throw new Error(res.message || 'Failed to delete template');
         }
         const currentPage = get().pagination.current_page;
-        await get().loadTemplates(currentPage);
+        await get().loadTemplates(currentPage, get().templateFilters);
     },
 
     // ─── Workspace Loading ──────────────────────────────────────────────────
