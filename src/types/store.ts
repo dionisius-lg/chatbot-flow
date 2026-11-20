@@ -6,6 +6,7 @@ import type {
     BotDialogType,
     BotTemplate,
     PaginationInfo,
+    TemplateFilters,
     User,
 } from './models';
 
@@ -37,8 +38,10 @@ export interface FlowStoreState {
     activeTemplateId: number | null;
     loading: boolean;
     saving: boolean;
+    templateFilters: TemplateFilters;
 
-    loadTemplates: (page?: number) => Promise<void>;
+    loadTemplates: (page?: number, filters?: TemplateFilters) => Promise<void>;
+    setTemplateFilters: (filters: TemplateFilters) => void;
     createTemplate: (data: Partial<BotTemplate>) => Promise<void>;
     updateTemplate: (id: number, data: Partial<BotTemplate>) => Promise<void>;
     deleteTemplate: (id: number) => Promise<void>;

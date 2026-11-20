@@ -22,7 +22,7 @@ describe('flowStore', () => {
             templates: [],
             pagination: {
                 total: 0,
-                per_page: 5,
+                per_page: 4,
                 current_page: 1,
                 last_page: 1,
                 paging: { current: 1, next: 1, previous: 1, first: 1, last: 1 },
@@ -37,6 +37,7 @@ describe('flowStore', () => {
             activeTemplateId: null,
             loading: false,
             saving: false,
+            templateFilters: {},
         });
         vi.clearAllMocks();
     });
@@ -74,12 +75,46 @@ describe('flowStore', () => {
             await useFlowStore.getState().loadTemplates(1);
 
             const state = useFlowStore.getState();
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=1');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=4&page=1');
             expect(state.templates).toHaveLength(2);
             expect(state.pagination.total).toBe(25);
             expect(state.pagination.current_page).toBe(1);
             expect(state.pagination.last_page).toBe(5);
             expect(state.pagination.paging.previous).toBe(1);
+        });
+
+        it('supports filtering by name, media_id, and is_active with dynamic query string', async () => {
+            vi.mocked(apiClient.get).mockResolvedValueOnce({
+                data: [{ id: 1, name: 'songkok', media_id: '4', is_active: 0 }],
+                total_data: 1,
+            });
+
+            await useFlowStore.getState().loadTemplates(1, {
+                name: 'song',
+                media_id: '4',
+                is_active: 0,
+            });
+
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=4&page=1&name=song&media_id=4&is_active=0');
+            expect(useFlowStore.getState().templateFilters).toEqual({
+                name: 'song',
+                media_id: '4',
+                is_active: 0,
+            });
+        });
+
+        it('omits filter keys from query string when empty or undefined', async () => {
+            vi.mocked(apiClient.get).mockResolvedValueOnce({
+                data: [],
+                total_data: 0,
+            });
+
+            await useFlowStore.getState().loadTemplates(2, {
+                name: '   ',
+                media_id: '',
+            });
+
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=4&page=2');
         });
 
         it('handles API errors silently and keeps templates empty', async () => {
@@ -109,7 +144,7 @@ describe('flowStore', () => {
             const res = await useFlowStore.getState().createTemplate({ name: 'New Template', media_id: '4' });
             expect(apiClient.post).toHaveBeenCalledWith('/bot_templates', { name: 'New Template', media_id: '4' });
             expect(res).toEqual(mockCreateRes);
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=1');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=4&page=1');
         });
 
         it('throws an error during create if API returns success: false', async () => {
@@ -128,7 +163,7 @@ describe('flowStore', () => {
             useFlowStore.setState({
                 pagination: {
                     total: 15,
-                    per_page: 5,
+                    per_page: 4,
                     current_page: 3,
                     last_page: 3,
                     paging: { current: 3, next: 3, previous: 2, first: 1, last: 3 },
@@ -143,7 +178,7 @@ describe('flowStore', () => {
 
             await useFlowStore.getState().updateTemplate(1, { name: 'Updated Template' });
             expect(apiClient.put).toHaveBeenCalledWith('/bot_templates/1', { name: 'Updated Template' });
-            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=5&page=3');
+            expect(apiClient.get).toHaveBeenCalledWith('/bot_templates?limit=4&page=3');
         });
 
         it('deletes a template soft (puts is_active = 0) and reloads templates', async () => {

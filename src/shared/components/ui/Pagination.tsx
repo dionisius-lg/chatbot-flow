@@ -17,14 +17,14 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
     }
 
     return (
-        <div className='flex items-center justify-between mt-6 pt-4 border-t border-gray-200'>
+        <div className='flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-200 w-full'>
             {/* Info text */}
-            <div className='text-xs text-gray-500'>
+            <div className='text-xs text-gray-500 text-center sm:text-left'>
                 Showing {info.lowest} to {info.highest} of {info.total.toLocaleString()} entries
             </div>
 
             {/* Page buttons */}
-            <nav className='flex items-center gap-1'>
+            <nav className='flex items-center gap-1 flex-wrap justify-center'>
                 {/* Previous button */}
                 <button
                     type='button'

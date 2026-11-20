@@ -5,10 +5,56 @@
 // Vite is used as it provides significantly faster build times compared to Webpack.
 // ============================================================================
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+import type { Plugin } from 'vite';
+
+/**
+ * Custom Vite plugin to serve standalone `server-host.json` directly from the project root
+ * during `npm run dev` and `npm run preview`, without bundling it into `dist/`.
+ */
+function serveRootServerHostPlugin(): Plugin {
+    const middleware = (req: { url?: string }, res: any, next: () => void) => {
+        const cleanUrl = (req.url || '').split('?')[0];
+        if (cleanUrl.endsWith('/server-host.json') || cleanUrl === 'server-host.json') {
+            const filePath = path.resolve(process.cwd(), 'server-host.json');
+            if (fs.existsSync(filePath)) {
+                try {
+                    const content = fs.readFileSync(filePath, 'utf-8');
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+                    res.end(content);
+                    return;
+                } catch {
+                    res.statusCode = 500;
+                    res.end();
+                    return;
+                }
+            }
+            res.statusCode = 404;
+            res.end();
+            return;
+        }
+        next();
+    };
+
+    return {
+        name: 'serve-root-server-host',
+        configureServer(server) {
+            server.middlewares.use(middleware);
+        },
+        configurePreviewServer(server) {
+            server.middlewares.use(middleware);
+        },
+    };
+}
 
 // We use the defineConfig(({ mode }) => {...}) syntax
 // to dynamically load environment variables (.env) based on the current mode (development/production).
@@ -21,6 +67,8 @@ export default defineConfig(({ mode }) => {
     return {
         base: baseDir,
         plugins: [
+            // Serve standalone server-host.json from project root in dev & preview
+            serveRootServerHostPlugin(),
             // Plugin to support React JSX syntax and Fast Refresh
             react(),
             // Plugin to compile Tailwind CSS v4
@@ -29,6 +77,9 @@ export default defineConfig(({ mode }) => {
             VitePWA({
                 registerType: 'autoUpdate',
                 includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
+                workbox: {
+                    navigateFallbackDenylist: [/server-host\.json$/],
+                },
                 manifest: {
                     name: 'Chatbot Flow Builder',
                     short_name: 'ChatbotFlow',

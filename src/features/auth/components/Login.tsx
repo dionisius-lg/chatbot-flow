@@ -5,14 +5,17 @@
 // Validates: IP format (regex), required fields, loading spinner.
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import SearchableHostSelect from './SearchableHostSelect';
 import { isValidHost } from '../../../lib/value';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
     // ─── Local form state ───────────────────────────────────────────────────
+    const [hosts, setHosts] = useState<string[]>([]);
+    const [loadingHosts, setLoadingHosts] = useState(true);
     const [ipServer, setIpServer] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -23,6 +26,71 @@ export default function Login() {
     const loading = useAuthStore((s) => s.loading);
     const error = useAuthStore((s) => s.error);
     const navigate = useNavigate();
+
+    // ─── Load standalone server-host.json at runtime ────────────────────────
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchServerHosts = async () => {
+            setLoadingHosts(true);
+            const baseUrl = import.meta.env.BASE_URL || '/';
+            const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+            const timestamp = Date.now();
+            const candidateUrls = [
+                `${normalizedBase}server-host.json?t=${timestamp}`,
+                `./server-host.json?t=${timestamp}`,
+                `../server-host.json?t=${timestamp}`,
+            ];
+
+            let loadedHosts: string[] = [];
+
+            for (const url of candidateUrls) {
+                try {
+                    const res = await fetch(url, {
+                        cache: 'no-store',
+                        headers: { Accept: 'application/json' },
+                    });
+
+                    if (!res.ok) {
+                        continue;
+                    }
+
+                    const rawText = await res.text();
+                    if (!rawText || !rawText.trim()) {
+                        continue;
+                    }
+
+                    const parsed: unknown = JSON.parse(rawText);
+                    if (!Array.isArray(parsed)) {
+                        continue;
+                    }
+
+                    loadedHosts = Array.from(
+                        new Set(
+                            parsed
+                                .filter((item): item is string => typeof item === 'string')
+                                .map((item) => item.trim())
+                                .filter((item) => item.length > 0),
+                        ),
+                    ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
+                    break;
+                } catch {
+                    // Gracefully handle missing file, empty content, or malformed JSON
+                }
+            }
+
+            if (isMounted) {
+                setHosts(loadedHosts);
+                setLoadingHosts(false);
+            }
+        };
+
+        fetchServerHosts();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     // ─── Submit handler ─────────────────────────────────────────────────────
     const handleSubmit = async (e: React.FormEvent) => {
@@ -98,31 +166,13 @@ export default function Login() {
                     {/* Host Field */}
                     <div>
                         <label className='block text-xs font-medium text-gray-700 mb-1.5'>Server Host</label>
-                        <div className='relative'>
-                            <div className='absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400'>
-                                <svg
-                                    className='w-4 h-4'
-                                    fill='none'
-                                    viewBox='0 0 24 24'
-                                    stroke='currentColor'
-                                    strokeWidth='2'
-                                    aria-hidden='true'
-                                >
-                                    <rect width='20' height='8' x='2' y='2' rx='2' />
-                                    <rect width='20' height='8' x='2' y='14' rx='2' />
-                                    <line x1='6' x2='6.01' y1='6' y2='6' />
-                                    <line x1='6' x2='6.01' y1='18' y2='18' />
-                                </svg>
-                            </div>
-                            <input
-                                type='text'
-                                value={ipServer}
-                                onChange={(e) => setIpServer(e.target.value)}
-                                className='w-full pl-10 pr-3.5 py-2.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-indigo-600 focus:ring-3 focus:ring-indigo-500/10 outline-none transition'
-                                placeholder='webcc.synergix.co.id'
-                            />
-                        </div>
-                        <p className='text-[11px] text-gray-400 mt-1 pl-1'>Enter IP or domain without http/https</p>
+                        <SearchableHostSelect
+                            options={hosts}
+                            value={ipServer}
+                            onChange={setIpServer}
+                            loading={loadingHosts}
+                            placeholder='Select server host'
+                        />
                     </div>
 
                     {/* Username Field */}

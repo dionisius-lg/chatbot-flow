@@ -1,10 +1,22 @@
 import api from '../../../config/api';
 
-import type { BotTemplate, BotFlow, BotDialog, BotDialogOption } from '../../../types';
+import type { BotTemplate, BotFlow, BotDialog, BotDialogOption, TemplateFilters } from '../../../types';
 
 export const flowService = {
-    getTemplates: async (page = 1, limit = 5) => {
-        return await api.get(`/bot_templates?limit=${limit}&page=${page}`);
+    getTemplates: async (page = 1, limit = 4, filters?: TemplateFilters) => {
+        const params = new URLSearchParams();
+        params.set('limit', String(limit));
+        params.set('page', String(page));
+        if (filters?.name && filters.name.trim() !== '') {
+            params.set('name', filters.name.trim());
+        }
+        if (filters?.media_id && filters.media_id.trim() !== '') {
+            params.set('media_id', filters.media_id.trim());
+        }
+        if (filters?.is_active !== undefined && filters?.is_active !== null) {
+            params.set('is_active', String(filters.is_active));
+        }
+        return await api.get(`/bot_templates?${params.toString()}`);
     },
     createTemplate: async (data: Partial<BotTemplate>) => {
         return await api.post('/bot_templates', data);
